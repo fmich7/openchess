@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .piece {
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 60px;
+    height: 60px;
+  }
+  .piece:hover {
+    cursor: grab;
+  }
+  .piece:active {
+    cursor: grabbing;
+  }
+}
