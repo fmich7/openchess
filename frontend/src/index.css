@@ -15,4 +15,17 @@
   .piece:active {
     cursor: grabbing;
   }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  #logo_underscore {
+    animation: pulse;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-duration: 1000ms;
+  }
 }

@@ -1,9 +1,51 @@
-import Chessboard from "./components/chessboard/chessboard";
-
+import EasyBotLogo from "./assets/bot1.jpg";
+import MediumBotLogo from "./assets/bot2.jpg";
+import HardBotLogo from "./assets/bot3.jpg";
+import Sidebar from "./components/Sidebar";
+import BotCard from "./components/home/BotCard";
+import Banner from "./pages/home/FrontPageBanner";
+import Header from "./pages/home/Header";
 function App() {
   return (
-    <div className="bg-cyan-600 text-rose-800">
-      <Chessboard />
+    <div className="flex flex-row w-[100vh_+25px] h-screen">
+      {/* left siderbar */}
+      <Sidebar />
+
+      {/* main */}
+      <div className="bg-background md:ml-[-25px] w-full overflow-y-scroll md:rounded-l-3xl shadow-xl">
+        <div className="flex flex-col gap-6 p-8">
+          <Header />
+
+          {/* content  */}
+          <div className="flex flex-col gap-6">
+            <Banner />
+            <hr className="border-t border-gray-600"></hr>
+            {/* bots section */}
+            <div className="flex flex-col items-center h-[430px]">
+              <span className="mb-6 text-2xl font-bold text-copy">
+                Challenge our bots
+              </span>
+              <div className="grid grid-cols-3 gap-4 ">
+                <BotCard
+                  name="Random moves"
+                  description="You should not have any troubble beating it!"
+                  image={EasyBotLogo}
+                />
+                <BotCard
+                  name="Easy bot"
+                  description="Duel a bot that is a little challenging."
+                  image={MediumBotLogo}
+                />
+                <BotCard
+                  name="Stockfish"
+                  description="Well, I guess you won't win against that."
+                  image={HardBotLogo}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

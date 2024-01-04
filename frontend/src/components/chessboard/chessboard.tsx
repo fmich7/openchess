@@ -1,147 +1,65 @@
-import Tile from "./tile";
+import { Chess, Square } from "chess.js";
+import { useState } from "react";
+import { Chessboard } from "react-chessboard";
 
-interface Piece {
-  image: string;
-  x: number;
-  y: number;
+interface Move {
+  from: string;
+  to: string;
+  promotion: string;
 }
 
-const pieces: Piece[] = [];
-let activePiece: HTMLElement | null = null;
+// fen -> setState
+interface BoardProps {
+  fen?: string | undefined;
+  draggable: boolean;
+}
 
-// fill board with pieces
-function CreateInitialBoardState() {
-  // white and black color
-  for (let s = 0; s < 2; s++) {
-    const Y = s === 0 ? 6 : 1;
-    const piece_color = Y === 6 ? "white" : "black";
+const Board = (props: BoardProps) => {
+  const [game, setGame] = useState(new Chess());
 
-    // pawns
-    for (let i = 0; i < 8; i++) {
-      pieces.push({
-        image: `/src/assets/chess_pieces/${piece_color}_pawn.png`,
-        x: i,
-        y: Y,
-      });
+  const makeMove = (move: Move | string) => {
+    const result = game.move(move);
+    setGame(new Chess(game.fen()));
+    return result;
+  };
+
+  function makeRandomMove() {
+    const possibleMoves = game.moves();
+    if (game.isGameOver() || game.isDraw() || possibleMoves.length === 0)
+      return; // exit if the game is over
+    const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+    makeMove(possibleMoves[randomIndex]);
+    return true;
+  }
+
+  function onDrop(sourceSquare: Square, targetSquare: Square) {
+    if (game.isGameOver() || game.isDraw()) {
+      console.log("GAME OVEWWR!");
+      return true;
     }
 
-    // rooks
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_rook.png`,
-      x: 0,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_rook.png`,
-      x: 7,
-      y: Y === 1 ? Y - 1 : Y + 1,
+    const move = makeMove({
+      from: sourceSquare,
+      to: targetSquare,
+      promotion: "q", // always promote to a queen for example simplicity
     });
 
-    // knights
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_knight.png`,
-      x: 1,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_knight.png`,
-      x: 6,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
-
-    // bishops
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_bishop.png`,
-      x: 2,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_bishop.png`,
-      x: 5,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
-
-    // queen
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_queen.png`,
-      x: 3,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
-    // king
-    pieces.push({
-      image: `/src/assets/chess_pieces/${piece_color}_king.png`,
-      x: 4,
-      y: Y === 1 ? Y - 1 : Y + 1,
-    });
+    // illegal move
+    if (move === null) return false;
+    setTimeout(makeRandomMove, 200);
+    return true;
   }
-}
 
-// handle grabbing a piece
-function GrabPiece(e: React.MouseEvent) {
-  const element = e.target as HTMLElement;
-  if (element.classList.contains("piece")) {
-    activePiece = element;
-    const x = e.clientX - 35;
-    const y = e.clientY - 35;
-
-    element.style.position = "absolute";
-    element.style.left = `${x}px`;
-    element.style.top = `${y}px`;
-  }
-}
-
-// handle moving a piece
-function MovePiece(e: React.MouseEvent) {
-  if (activePiece) {
-    const x = e.clientX - 35;
-    const y = e.clientY - 35;
-
-    activePiece.style.position = "absolute";
-    activePiece.style.left = `${x}px`;
-    activePiece.style.top = `${y}px`;
-  }
-}
-
-// handle dropping a piece
-function DropPiece() {
-  activePiece = null;
-}
-
-// Chessboard component
-function Chessboard() {
-  const tiles = [];
-  const columns = "ABCDEFGHI";
-  CreateInitialBoardState();
-
-  // generate board
-  for (let i = 7; i >= 0; i--) {
-    for (let j = 0; j < 8; j++) {
-      let image = undefined;
-
-      pieces.forEach((p) => {
-        if (p.x === j && p.y === i) image = p.image;
-      });
-
-      tiles.push(
-        <Tile
-          col={j}
-          row={i}
-          image={image}
-          key={columns[j] + (i + 1).toString()}
-        />
-      );
-    }
-  }
   return (
-    <div
-      onMouseDown={(e) => GrabPiece(e)}
-      onMouseMove={(e) => MovePiece(e)}
-      onMouseUp={() => DropPiece()}
-      className="grid grid-cols-8 h-[32rem] w-[32rem]"
-    >
-      {tiles}
+    <div className="w-96">
+      <Chessboard
+        position={props.fen ? props.fen : game.fen()}
+        onPieceDrop={onDrop}
+        arePiecesDraggable={props.draggable && !game.isGameOver()}
+        autoPromoteToQueen={true}
+      />
     </div>
   );
-}
+};
 
-export default Chessboard;
+export default Board;
