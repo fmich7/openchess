@@ -51,14 +51,12 @@ const Board = (props: BoardProps) => {
   }
 
   return (
-    <div className="w-96">
-      <Chessboard
-        position={props.fen ? props.fen : game.fen()}
-        onPieceDrop={onDrop}
-        arePiecesDraggable={props.draggable && !game.isGameOver()}
-        autoPromoteToQueen={true}
-      />
-    </div>
+    <Chessboard
+      position={props.fen ? props.fen : game.fen()}
+      onPieceDrop={onDrop}
+      arePiecesDraggable={props.draggable && !game.isGameOver()}
+      autoPromoteToQueen={true}
+    />
   );
 };
 

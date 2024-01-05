@@ -2,6 +2,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/
+// jsxRuntime: "classic",
 export default defineConfig({
   plugins: [react()],
   server: {

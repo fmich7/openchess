@@ -1,7 +1,10 @@
+import { Link } from "react-router-dom";
+
 interface BotCardProps {
   name: string;
   description: string;
   image: string;
+  redirect: string;
 }
 
 const BotCard = (props: BotCardProps) => {
@@ -13,9 +16,11 @@ const BotCard = (props: BotCardProps) => {
         <p className="font-bold text-copy">{props.name}</p>
         <p className="text-copy-lighter">{props.description}</p>
 
-        <button className="w-full h-10 mt-4 border-2 rounded bg-primary text-background border-primary-light">
-          Play now
-        </button>
+        <Link to={props.redirect}>
+          <button className="w-full h-10 mt-4 border-2 rounded bg-primary text-background border-primary-light">
+            Play now
+          </button>
+        </Link>
       </div>
     </div>
   );
