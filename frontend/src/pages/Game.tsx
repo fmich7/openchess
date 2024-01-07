@@ -1,9 +1,21 @@
 import { FaChessPawn } from "react-icons/fa";
 import Board from "../components/chessboard/Chessboard";
 import GameController from "../components/game/GameController";
+import Timer from "../components/game/Timer";
+
 const Game = () => {
-  const gameController: GameController = new GameController(5);
-  console.log(gameController);
+  const playerOneId = "Player";
+  const playerTwoId = "Opponent";
+  const gameController: GameController = new GameController(
+    true,
+    5,
+    0,
+    playerOneId,
+    playerTwoId,
+    "Bullet"
+  );
+
+  const boardOrientation = gameController.isPlayerOneWhite ? "white" : "black";
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 md:items-start md:flex-row">
@@ -16,35 +28,50 @@ const Game = () => {
               <FaChessPawn />
             </div>
             <div>
-              <p>1+0 • Casual • Bullet</p>
-              <span className=" text-copy-lighter">21 minutes ago</span>
+              <p>
+                {gameController.time.toString() +
+                  "+" +
+                  gameController.timeAdded.toString()}{" "}
+                • {gameController.isRanked ? "Ranked" : "Casual"} •{" "}
+                {gameController.gameType}
+              </p>
+              <span className=" text-copy-lighter">Just started now</span>
             </div>
           </div>
           {/* match players */}
           <div>
-            ⚪ Anonymous <br />⚫ Anonymous
+            {(!gameController.isPlayerOneWhite ? "⚪" : "⚫") +
+              " " +
+              playerTwoId}
+            <br />
+            {(gameController.isPlayerOneWhite ? "⚪" : "⚫") +
+              " " +
+              playerOneId}
           </div>
           <hr className="border-t border-copy-lighter"></hr>
           {/* game status */}
-          <div className="grid justify-center">Game aborted</div>
+          <div className="grid justify-center">{gameController.gameStatus}</div>
         </div>
       </div>
       {/* BOARD SECTION */}
       <div className="grid justify-center">
         <div className="w-96">
-          <Board draggable={true} />
+          <Board
+            gameController={gameController}
+            boardOrientation={boardOrientation}
+            draggable={true}
+          />
         </div>
       </div>
       {/* TIMERS SECTION */}
       <div className="flex-1 w-full md:max-w-96 text-copy-light">
         <div className="flex flex-col gap-4 p-4 border rounded shadow-2xl bg-foreground border-border">
           {/* opponents timer */}
-          <div className="flex">
-            <p className="flex-1 ">⚪ Anonymous</p>
-            <div className="px-3 py-1 text-2xl font-bold rounded bg-border">
-              01:35
-            </div>
-          </div>
+          <Timer
+            nickname={playerTwoId}
+            time={gameController.time}
+            isWhite={!gameController.isPlayerOneWhite}
+          />
           <hr className="border-t border-copy-lighter"></hr>
           {/* last moves */}
           <div className="grid grid-cols-5">
@@ -81,12 +108,11 @@ const Game = () => {
           </div>
           {/* players timer */}
           <hr className="border-t border-copy-lighter"></hr>
-          <div className="flex">
-            <p className="flex-1 ">⚪ Anonymous</p>
-            <div className="px-3 py-1 text-2xl font-bold rounded bg-secondary-dark">
-              01:35
-            </div>
-          </div>
+          <Timer
+            nickname={playerOneId}
+            time={gameController.time}
+            isWhite={gameController.isPlayerOneWhite}
+          />
         </div>
       </div>
     </div>
