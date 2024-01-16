@@ -13,7 +13,12 @@ interface Move {
 }
 
 const Game = () => {
+  const isMounted = useRef(false);
+  const whiteToMove = useRef(true);
+  const [whiteTurn, setWhiteTurn] = useState(whiteToMove.current);
+
   const [game, setGame] = useState(new Chess());
+  const [movesList, setMovesList] = useState<string[]>([]);
   const playerOneId = "Player";
   const playerTwoId = "Opponent";
 
@@ -28,24 +33,28 @@ const Game = () => {
     );
   }, []);
   const boardOrientation = gc.isPlayerOneWhite ? "white" : "black";
-  const whiteToMove = useRef(gc.isPlayerOneWhite);
 
   // make a ai move
   const makeAiMove = () => {
     setTimeout(() => {
       const possibleMoves = game.moves();
       const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+
       game.move(possibleMoves[randomIndex]);
-      setGame(() => new Chess(game.fen()));
+      setMovesList((moves) => [...moves, possibleMoves[randomIndex]]);
+      setGame(new Chess(game.fen()));
       whiteToMove.current = !whiteToMove.current;
+      setWhiteTurn(whiteToMove.current);
     }, 4000);
   };
 
   // If ai is white -> make first move
   useEffect(() => {
-    if (!whiteToMove.current) {
-      makeAiMove();
-      whiteToMove.current = true;
+    if (isMounted.current === false) {
+      isMounted.current = true;
+      if (gc.isPlayerOneWhite === false && whiteToMove.current) {
+        makeAiMove();
+      }
     }
   }, []);
 
@@ -58,25 +67,29 @@ const Game = () => {
 
   // handle dropping piece on board
   const onDrop = (sourceSquare: Square, targetSquare: Square) => {
+    if (
+      (gc.isPlayerOneWhite && !whiteTurn) ||
+      (!gc.isPlayerOneWhite && whiteTurn)
+    )
+      return false;
+
     const move = makeMove({
       from: sourceSquare,
       to: targetSquare,
       promotion: "q", // always promote to a queen for example simplicity
     });
     if (move === null) return false;
-
+    setMovesList((moves) => [...moves, game.history()[0]]);
     whiteToMove.current = !whiteToMove.current;
+    setWhiteTurn(whiteToMove.current);
     makeAiMove();
+    console.log();
 
     return true;
   };
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 md:items-start md:flex-row">
-      {/* test */}
-      <div className={`${whiteToMove.current ? "bg-green-400" : "bg-red-700"}`}>
-        {boardOrientation}
-      </div>
       {/* INFO SECTION */}
       <div className="flex-1 w-full md:max-w-96 text-copy-light">
         <div className="flex flex-col gap-4 p-4 border rounded shadow-2xl bg-foreground border-border">
@@ -106,7 +119,7 @@ const Game = () => {
       </div>
       {/* BOARD SECTION */}
       <div className="grid justify-center">
-        <div className="w-96">
+        <div className="w-96 text-fuchsia-50">
           <Chessboard
             boardOrientation={boardOrientation}
             position={game.fen()}
@@ -114,6 +127,7 @@ const Game = () => {
             arePiecesDraggable={true}
             autoPromoteToQueen={true}
           />
+          {game.fen()}
         </div>
       </div>
       {/* TIMERS SECTION */}
@@ -123,12 +137,14 @@ const Game = () => {
           <Timer
             nickname={playerTwoId}
             time={gc.time}
-            isActive={!whiteToMove.current}
+            isActive={
+              gc.isPlayerOneWhite ? !whiteToMove.current : whiteToMove.current
+            }
             isWhite={!gc.isPlayerOneWhite}
           />
           <hr className="border-t border-copy-lighter"></hr>
           {/* last moves */}
-          <LastMoves />
+          <LastMoves moves={movesList} />
           {/* offer and resign buttons */}
           <div className="grid gap-2">
             <button className="h-12 rounded-lg bg-border hover:bg-background">
@@ -144,7 +160,9 @@ const Game = () => {
             nickname={playerOneId}
             time={gc.time}
             isWhite={gc.isPlayerOneWhite}
-            isActive={whiteToMove.current}
+            isActive={
+              gc.isPlayerOneWhite ? whiteToMove.current : !whiteToMove.current
+            }
           />
         </div>
       </div>

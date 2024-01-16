@@ -1,3 +1,5 @@
+// import { Chess } from "chess.js";
+
 export default class GameController {
   constructor(
     public isRanked: boolean,

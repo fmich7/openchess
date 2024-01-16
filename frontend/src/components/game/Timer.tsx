@@ -35,7 +35,7 @@ const Timer = (props: TimerProps) => {
   const [formattedTime, setFormattedTime] = useState(formatTime(time));
 
   useEffect(() => {
-    if (!props.isActive || props.time <= 0) return;
+    if (props.isActive === false || props.time <= 0) return;
 
     const timer = setInterval(() => {
       setTime((time) => time - 1);
