@@ -13,56 +13,76 @@ interface Move {
 }
 
 const Game = () => {
+  // game variables
   const isMounted = useRef(false);
+  const game = useRef(new Chess());
   const whiteToMove = useRef(true);
-  const [whiteTurn, setWhiteTurn] = useState(whiteToMove.current);
+  const [isGameOver, setIsGameOver] = useState(false);
 
-  const [game, setGame] = useState(new Chess());
-  const [movesList, setMovesList] = useState<string[]>([]);
   const playerOneId = "Player";
   const playerTwoId = "Opponent";
-
   const gc: GameController = useMemo(() => {
-    return new GameController(
-      true,
-      5 * 60,
-      0,
-      playerOneId,
-      playerTwoId,
-      "Bullet"
-    );
+    return new GameController(true, 10, 0, playerOneId, playerTwoId, "Bullet");
   }, []);
+
+  const [movesList, setMovesList] = useState<string[]>([]);
+  const [whiteTurn, setWhiteTurn] = useState(whiteToMove.current);
+
+  // players
+  const [whiteTime, setWhiteTime] = useState(gc.time * 1000);
+  const [blackTime, setBlackTime] = useState(gc.time * 1000);
+
   const boardOrientation = gc.isPlayerOneWhite ? "white" : "black";
+
+  useEffect(() => {
+    // init
+    if (isMounted.current === false) {
+      isMounted.current = true;
+
+      // ai start game
+      if (gc.isPlayerOneWhite === false && whiteToMove.current) makeAiMove();
+    }
+
+    // Cleanup
+    return () => {
+      clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (blackTime === 0 || whiteTime == 0) {
+      console.log("Ran out of time!");
+      gameOver();
+    }
+  }, [whiteTime, blackTime]);
 
   // make a ai move
   const makeAiMove = () => {
     setTimeout(() => {
-      const possibleMoves = game.moves();
+      const possibleMoves = game.current.moves();
       const randomIndex = Math.floor(Math.random() * possibleMoves.length);
 
-      game.move(possibleMoves[randomIndex]);
-      setMovesList((moves) => [...moves, possibleMoves[randomIndex]]);
-      setGame(new Chess(game.fen()));
-      whiteToMove.current = !whiteToMove.current;
-      setWhiteTurn(whiteToMove.current);
-    }, 4000);
+      makeMove(possibleMoves[randomIndex]);
+    }, 400);
   };
 
-  // If ai is white -> make first move
-  useEffect(() => {
-    if (isMounted.current === false) {
-      isMounted.current = true;
-      if (gc.isPlayerOneWhite === false && whiteToMove.current) {
-        makeAiMove();
-      }
-    }
-  }, []);
-
-  // setgame to board after move
+  // make move
   const makeMove = (move: Move | string) => {
-    const result = game.move(move);
-    setGame(new Chess(game.fen()));
-    return result;
+    const currMove = game.current.move(move);
+    if (currMove === null) {
+      return null;
+    }
+
+    if (game.current.isGameOver()) gameOver();
+    else updateTimers();
+    setMovesList((moves) => [
+      ...moves,
+      game.current.history()[game.current.history().length - 1],
+    ]);
+    whiteToMove.current = !whiteToMove.current;
+    setWhiteTurn(whiteToMove.current);
+
+    return currMove;
   };
 
   // handle dropping piece on board
@@ -79,13 +99,31 @@ const Game = () => {
       promotion: "q", // always promote to a queen for example simplicity
     });
     if (move === null) return false;
-    setMovesList((moves) => [...moves, game.history()[0]]);
-    whiteToMove.current = !whiteToMove.current;
-    setWhiteTurn(whiteToMove.current);
-    makeAiMove();
-    console.log();
 
+    makeAiMove();
     return true;
+  };
+
+  const gameOver = () => {
+    clearInterval(intervalRef.current);
+    setIsGameOver(true);
+    game.current.isGameOver = () => true;
+  };
+
+  // TIMERS
+  const intervalRef = useRef<number>();
+  const updateTimers = () => {
+    clearInterval(intervalRef.current);
+
+    if (isGameOver) return;
+
+    intervalRef.current = setInterval(() => {
+      if (whiteToMove.current) {
+        setWhiteTime((t) => Math.max(0, t - 100));
+      } else {
+        setBlackTime((t) => Math.max(0, t - 100));
+      }
+    }, 100);
   };
 
   return (
@@ -122,12 +160,12 @@ const Game = () => {
         <div className="w-96 text-fuchsia-50">
           <Chessboard
             boardOrientation={boardOrientation}
-            position={game.fen()}
+            position={game.current.fen()}
             onPieceDrop={onDrop}
-            arePiecesDraggable={true}
+            arePiecesDraggable={!isGameOver}
             autoPromoteToQueen={true}
           />
-          {game.fen()}
+          {game.current.fen()}
         </div>
       </div>
       {/* TIMERS SECTION */}
@@ -136,7 +174,7 @@ const Game = () => {
           {/* opponents timer */}
           <Timer
             nickname={playerTwoId}
-            time={gc.time}
+            time={!gc.isPlayerOneWhite ? whiteTime : blackTime}
             isActive={
               gc.isPlayerOneWhite ? !whiteToMove.current : whiteToMove.current
             }
@@ -158,7 +196,7 @@ const Game = () => {
           <hr className="border-t border-copy-lighter"></hr>
           <Timer
             nickname={playerOneId}
-            time={gc.time}
+            time={gc.isPlayerOneWhite ? whiteTime : blackTime}
             isWhite={gc.isPlayerOneWhite}
             isActive={
               gc.isPlayerOneWhite ? whiteToMove.current : !whiteToMove.current

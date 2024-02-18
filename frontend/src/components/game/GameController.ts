@@ -1,5 +1,3 @@
-// import { Chess } from "chess.js";
-
 export default class GameController {
   constructor(
     public isRanked: boolean,
@@ -9,8 +7,8 @@ export default class GameController {
     public playerTwoId: string,
     public gameType: string
   ) {
-    this.whiteTime = time;
-    this.blackTime = time;
+    this.whiteTime = time * 1000;
+    this.blackTime = time * 1000;
     this.gameStatus = "Game in play!";
     this.isPlayerOneWhite = Math.random() < 0.5;
     this.playerOneToMove = this.isPlayerOneWhite;
