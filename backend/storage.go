@@ -75,10 +75,20 @@ func (s *PostgressStore) UpdateAccount(*Account) error {
 	return nil
 }
 func (s *PostgressStore) DeleteAccount(id int) error {
-	return nil
+	_, err := s.db.Query("delete from account where id = $1", id)
+	return err
 }
 func (s *PostgressStore) GetAccountByID(id int) (*Account, error) {
-	return nil, nil
+	rows, err := s.db.Query("select * from account where id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		return scanIntoAccount(rows)
+	}
+
+	return nil, fmt.Errorf("user with ID=%d does not exist", id)
 }
 func (s *PostgressStore) GetAccounts() ([]*Account, error) {
 	rows, err := s.db.Query("select * from account")
@@ -88,20 +98,24 @@ func (s *PostgressStore) GetAccounts() ([]*Account, error) {
 
 	accounts := []*Account{}
 	for rows.Next() {
-		account := new(Account)
-		err := rows.Scan(
-			&account.ID,
-			&account.FirstName,
-			&account.LastName,
-			&account.Nickname,
-			&account.Elo,
-			&account.CreatedAt)
+		account, err := scanIntoAccount(rows)
 		if err != nil {
 			return nil, err
 		}
-
 		accounts = append(accounts, account)
 	}
 
 	return accounts, nil
+}
+
+func scanIntoAccount(rows *sql.Rows) (*Account, error) {
+	account := new(Account)
+	err := rows.Scan(
+		&account.ID,
+		&account.FirstName,
+		&account.LastName,
+		&account.Nickname,
+		&account.Elo,
+		&account.CreatedAt)
+	return account, err
 }
