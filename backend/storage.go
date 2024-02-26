@@ -13,6 +13,7 @@ type Storage interface {
 	UpdateAccount(*Account) error
 	GetAccounts() ([]*Account, error)
 	GetAccountByID(int) (*Account, error)
+	GetAccountByNickname(string) (*Account, error)
 }
 
 type PostgressStore struct {
@@ -43,6 +44,7 @@ func (s *PostgressStore) createAccountTable() error {
 		first_name varchar(50),
 		last_name varchar(50),
 		nickname varchar(50),
+		encrypted_password varchar(100),
 		elo serial,
 		created_at timestamp
 	)`
@@ -53,14 +55,15 @@ func (s *PostgressStore) createAccountTable() error {
 
 func (s *PostgressStore) CreateAccount(acc *Account) error {
 	query := `insert into account
-	(first_name, last_name, nickname, elo, created_at) 
-	values ($1, $2, $3, $4, $5)`
+	(first_name, last_name, nickname, encrypted_password, elo, created_at) 
+	values ($1, $2, $3, $4, $5, $6)`
 
 	resp, err := s.db.Query(
 		query,
 		acc.FirstName,
 		acc.LastName,
 		acc.Nickname,
+		acc.EncryptedPassword,
 		acc.Elo, acc.CreatedAt)
 
 	if err != nil {
@@ -90,6 +93,20 @@ func (s *PostgressStore) GetAccountByID(id int) (*Account, error) {
 
 	return nil, fmt.Errorf("user with ID=%d does not exist", id)
 }
+
+func (s *PostgressStore) GetAccountByNickname(nickname string) (*Account, error) {
+	rows, err := s.db.Query("select * from account where nickname = $1", nickname)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		return scanIntoAccount(rows)
+	}
+
+	return nil, fmt.Errorf("user with nickname=%s does not exist", nickname)
+}
+
 func (s *PostgressStore) GetAccounts() ([]*Account, error) {
 	rows, err := s.db.Query("select * from account")
 	if err != nil {
@@ -115,6 +132,7 @@ func scanIntoAccount(rows *sql.Rows) (*Account, error) {
 		&account.FirstName,
 		&account.LastName,
 		&account.Nickname,
+		&account.EncryptedPassword,
 		&account.Elo,
 		&account.CreatedAt)
 	return account, err

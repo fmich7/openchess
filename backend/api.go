@@ -28,12 +28,45 @@ func NewAPIServer(listenAddr string, store Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
+	router.HandleFunc("/login", makeHTTPHandleFunc(s.handleLogin))
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleAccountByID), s.store))
 
 	log.Println("Server is running on port: ", s.listenAddr)
 
 	http.ListenAndServe(s.listenAddr, router)
+}
+
+func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != "POST" {
+		return fmt.Errorf("method %s not allowed", r.Method)
+	}
+
+	var loginReq LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
+		return err
+	}
+
+	acc, err := s.store.GetAccountByNickname(loginReq.Nickname)
+	if err != nil {
+		return err
+	}
+
+	if !acc.ValidatePassword(loginReq.Password) {
+		return fmt.Errorf("not authenticated")
+	}
+
+	tokenString, err := createJWT(acc)
+	if err != nil {
+		return err
+	}
+
+	resp := LoginResponse{
+		Token: tokenString,
+		ID:    acc.ID,
+	}
+
+	return WriteJSON(w, http.StatusOK, resp)
 }
 
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
@@ -83,16 +116,23 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 	}
 	defer r.Body.Close()
 
-	account := NewAccount(accountRequest.FirstName, accountRequest.LastName, accountRequest.Nickname)
-	if err := s.store.CreateAccount(account); err != nil {
-		return err
+	if len(accountRequest.Password) < 3 {
+		return WriteJSON(w, http.StatusBadRequest, ApiError{Error: "invalid password"})
 	}
-	tokenString, err := createJWT(account)
+
+	account, err := NewAccount(
+		accountRequest.FirstName,
+		accountRequest.LastName,
+		accountRequest.Nickname, accountRequest.Password)
+
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("JWT TOKEN: ", tokenString)
+	if err := s.store.CreateAccount(account); err != nil {
+		return err
+	}
+
 	return WriteJSON(w, http.StatusOK, account)
 }
 
@@ -169,7 +209,7 @@ func validateJWT(tokenString string) (*jwt.Token, error) {
 
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
