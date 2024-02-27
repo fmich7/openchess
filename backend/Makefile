@@ -1,5 +1,5 @@
 build:
-	go build -o bin/app.exe
+	go build -o bin/app.exe .\cmd\api\main.go 
 
 run: build
 	./bin/app.exe

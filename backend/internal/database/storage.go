@@ -1,11 +1,15 @@
-package main
+package database
 
 import (
 	"database/sql"
 	"fmt"
 
 	_ "github.com/lib/pq"
+	"github.com/rekjef/openchess/internal/config"
+	"github.com/rekjef/openchess/internal/types"
 )
+
+type Account = types.Account
 
 type Storage interface {
 	CreateAccount(*Account) error
@@ -20,8 +24,15 @@ type PostgressStore struct {
 	db *sql.DB
 }
 
-func NewPostgressStore() (*PostgressStore, error) {
-	connStr := "user=postgres dbname=postgres password=admin sslmode=disable"
+func NewPostgressStore(config *config.Env) (*PostgressStore, error) {
+	connStr := fmt.Sprintf(
+		"user=%s dbname=%s password=%s sslmode=%s",
+		config.GetEnv("POSTGRES_USER"),
+		config.GetEnv("POSTGRES_DBNAME"),
+		config.GetEnv("POSTGRES_PASSWORD"),
+		config.GetEnv("POSTGRES_SSLMODE"),
+	)
+
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err

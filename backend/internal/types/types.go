@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"math/rand"
@@ -34,7 +34,7 @@ type Account struct {
 	CreatedAt         time.Time `json:"createdAt"`
 }
 
-func (a *Account) ValidatePassword(pw string) bool {
+func (a *Account) ComparePasswords(pw string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(a.EncryptedPassword), []byte(pw)) == nil
 }
 
