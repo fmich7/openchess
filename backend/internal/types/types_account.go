@@ -7,6 +7,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Account struct {
+	ID                int       `json:"id"`
+	FirstName         string    `json:"firstName"`
+	LastName          string    `json:"lastName"`
+	Nickname          string    `json:"nickname"`
+	EncryptedPassword string    `json:"-"`
+	Elo               int       `json:"elo"`
+	CreatedAt         time.Time `json:"createdAt"`
+}
+
 type LoginResponse struct {
 	ID    int    `json:"id"`
 	Token string `json:"token"`
@@ -22,16 +32,6 @@ type CreateAccountRequest struct {
 	LastName  string `json:"lastName"`
 	Nickname  string `json:"nickname"`
 	Password  string `json:"password"`
-}
-
-type Account struct {
-	ID                int       `json:"id"`
-	FirstName         string    `json:"firstName"`
-	LastName          string    `json:"lastName"`
-	Nickname          string    `json:"nickname"`
-	EncryptedPassword string    `json:"-"`
-	Elo               int       `json:"elo"`
-	CreatedAt         time.Time `json:"createdAt"`
 }
 
 func (a *Account) ComparePasswords(pw string) bool {

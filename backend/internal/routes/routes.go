@@ -12,5 +12,7 @@ func AddRoutes(mux *mux.Router, logger *utils.Logger, store database.Storage) {
 	mux.HandleFunc("/account", handlers.HandleAccount(logger, store))
 	// protect this in future
 	mux.HandleFunc("/account/{id}", handlers.HandleAccountByID(logger, store))
+	mux.HandleFunc("/game", handlers.HandleManagingChessGame(store))
+	mux.HandleFunc("/game/{id}", handlers.HandleChessGame(store))
 	mux.Handle("/", handlers.HandleNotFound(logger))
 }

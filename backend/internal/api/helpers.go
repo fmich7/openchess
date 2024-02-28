@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,14 +23,17 @@ func SendError(w http.ResponseWriter, status int, err error) error {
 
 // type apiFunc func(http.ResponseWriter, *http.Request) error
 
-// func MakeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		if err := f(w, r); err != nil {
-// 			// handle the error
-// 			utils.Encode(w, http.StatusBadRequest, ApiError{Error: err.Error()})
-// 		}
-// 	}
-// }
+//	func MakeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
+//		return func(w http.ResponseWriter, r *http.Request) {
+//			if err := f(w, r); err != nil {
+//				// handle the error
+//				utils.Encode(w, http.StatusBadRequest, ApiError{Error: err.Error()})
+//			}
+//		}
+//	}
+func MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	SendError(w, http.StatusMethodNotAllowed, errors.New("method not allowed "+r.Method))
+}
 
 func PermissionDenied(w http.ResponseWriter) {
 	utils.Encode(w, http.StatusForbidden, ApiError{Error: "permission denied"})

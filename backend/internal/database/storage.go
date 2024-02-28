@@ -9,15 +9,23 @@ import (
 	"github.com/rekjef/openchess/internal/types"
 )
 
+// binds
 type Account = types.Account
+type ChessGame = types.ChessGame
 
 type Storage interface {
+	// Account
 	CreateAccount(*Account) error
 	DeleteAccount(int) error
 	UpdateAccount(*Account) error
 	GetAccounts() ([]*Account, error)
 	GetAccountByID(int) (*Account, error)
 	GetAccountByNickname(string) (*Account, error)
+
+	// ChessGame
+	CreateChessGame(*ChessGame) error
+	GetChessGames() ([]*ChessGame, error)
+	GetChessGameByID(int) (*ChessGame, error)
 }
 
 type PostgressStore struct {
@@ -46,7 +54,15 @@ func NewPostgressStore(config *config.Env) (*PostgressStore, error) {
 }
 
 func (s *PostgressStore) Init() error {
-	return s.createAccountTable()
+	if err := s.createAccountTable(); err != nil {
+		return err
+	}
+
+	if err := s.createChessGameTable(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *PostgressStore) createAccountTable() error {
@@ -64,76 +80,101 @@ func (s *PostgressStore) createAccountTable() error {
 	return err
 }
 
-func (s *PostgressStore) CreateAccount(acc *Account) error {
-	query := `insert into account
-	(first_name, last_name, nickname, encrypted_password, elo, created_at) 
-	values ($1, $2, $3, $4, $5, $6)`
+func (s *PostgressStore) createChessGameTable() error {
+	query := `CREATE TABLE IF NOT EXISTS chessGame (
+		id serial primary key,
+		host_id integer,
+		white_player_id integer,
+		black_player_id integer,
+		white_to_move boolean,
+		game_fen varchar(500),
+		game_type varchar(50),
+		game_status varchar(50),
+		game_ended boolean,
+		game_won_by_white boolean,
+		is_ranked boolean,
+		time integer,
+		time_added integer,
+		moves_count integer,
+		move_history varchar(1000),
+		created_at timestamp
+	)`
 
-	resp, err := s.db.Query(
+	_, err := s.db.Exec(query)
+
+	return err
+}
+func (s *PostgressStore) CreateChessGame(chessGame *ChessGame) error {
+	query := `insert into chessGame
+	(
+		host_id,
+		white_player_id,
+		black_player_id,
+		white_to_move,
+		game_fen,
+		game_type,
+		game_status,
+		game_ended,
+		game_won_by_white,
+		is_ranked,
+		time,
+		time_added,
+		moves_count,
+		move_history,
+		created_at
+	) 
+	values (
+		$1, $2, $3, $4, $5, $6, $7, $8, 
+		$9, $10, $11, $12, $13, $14, $15
+	)`
+
+	_, err := s.db.Query(
 		query,
-		acc.FirstName,
-		acc.LastName,
-		acc.Nickname,
-		acc.EncryptedPassword,
-		acc.Elo, acc.CreatedAt)
-
+		chessGame.HostID,
+		chessGame.WhitePlayerID,
+		chessGame.BlackPlayerID,
+		chessGame.WhiteToMove,
+		chessGame.GameFEN,
+		chessGame.GameType,
+		chessGame.GameStatus,
+		chessGame.GameEnded,
+		chessGame.GameWonByWhite,
+		chessGame.IsRanked,
+		chessGame.Time,
+		chessGame.TimeAdded,
+		chessGame.MovesCount,
+		chessGame.MoveHistory,
+		chessGame.CreatedAt,
+	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%+v\n", resp)
-
 	return err
 }
-func (s *PostgressStore) UpdateAccount(*Account) error {
-	return nil
-}
-func (s *PostgressStore) DeleteAccount(id int) error {
-	_, err := s.db.Query("delete from account where id = $1", id)
-	return err
-}
-func (s *PostgressStore) GetAccountByID(id int) (*Account, error) {
-	rows, err := s.db.Query("select * from account where id = $1", id)
-	if err != nil {
-		return nil, err
-	}
 
-	for rows.Next() {
-		return scanIntoAccount(rows)
-	}
+func scanIntoGame(rows *sql.Rows) (*ChessGame, error) {
+	game := new(ChessGame)
+	err := rows.Scan(
+		&game.ID,
+		&game.HostID,
+		&game.WhitePlayerID,
+		&game.BlackPlayerID,
+		&game.WhiteToMove,
+		&game.GameFEN,
+		&game.GameType,
+		&game.GameStatus,
+		&game.GameEnded,
+		&game.GameWonByWhite,
+		&game.IsRanked,
+		&game.Time,
+		&game.TimeAdded,
+		&game.MovesCount,
+		&game.MoveHistory,
+		&game.CreatedAt,
+	)
 
-	return nil, fmt.Errorf("user with ID=%d does not exist", id)
-}
-
-func (s *PostgressStore) GetAccountByNickname(nickname string) (*Account, error) {
-	rows, err := s.db.Query("select * from account where nickname = $1", nickname)
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		return scanIntoAccount(rows)
-	}
-
-	return nil, fmt.Errorf("user with nickname=%s does not exist", nickname)
-}
-
-func (s *PostgressStore) GetAccounts() ([]*Account, error) {
-	rows, err := s.db.Query("select * from account")
-	if err != nil {
-		return nil, err
-	}
-
-	accounts := []*Account{}
-	for rows.Next() {
-		account, err := scanIntoAccount(rows)
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
-	}
-
-	return accounts, nil
+	return game, err
 }
 
 func scanIntoAccount(rows *sql.Rows) (*Account, error) {

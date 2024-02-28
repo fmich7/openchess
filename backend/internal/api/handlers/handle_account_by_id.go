@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/api"
@@ -45,7 +44,7 @@ func HandleAccountByID(logger *utils.Logger, store database.Storage) http.Handle
 			err := handleDeleteAccountByID(w, r, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		default:
-			api.SendError(w, http.StatusMethodNotAllowed, errors.New("method not allowed "+r.Method))
+			api.MethodNotAllowed(w, r)
 		}
 	}
 }

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -12,9 +11,9 @@ import (
 	"github.com/rekjef/openchess/pkg/utils"
 )
 
-func handlePostLogin(w http.ResponseWriter, r *http.Request, store database.Storage) error {
-	var loginReq types.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
+func loginUser(w http.ResponseWriter, r *http.Request, store database.Storage) error {
+	loginReq := new(types.LoginRequest)
+	if err := utils.Decode[types.LoginRequest](r, loginReq); err != nil {
 		return err
 	}
 
@@ -44,10 +43,10 @@ func HandleLogin(store database.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			err := handlePostLogin(w, r, store)
+			err := loginUser(w, r, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		default:
-			api.SendError(w, http.StatusMethodNotAllowed, errors.New("method not allowed "+r.Method))
+			api.MethodNotAllowed(w, r)
 		}
 
 	}
