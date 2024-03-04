@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/rs/cors"
+
 	"github.com/gorilla/mux"
 	"github.com/rekjef/openchess/internal/config"
 	"github.com/rekjef/openchess/internal/database"
@@ -42,7 +44,8 @@ func run(context context.Context, env string) error {
 	port := config.GetEnv("PORT")
 	logger.Info.Printf("Server is running on port: %s\n", port)
 
-	if err = http.ListenAndServe(":"+port, mux); err != nil {
+	handler := cors.Default().Handler(mux)
+	if err = http.ListenAndServe(":"+port, handler); err != nil {
 		return err
 	}
 

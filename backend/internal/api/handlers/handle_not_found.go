@@ -11,6 +11,6 @@ import (
 func HandleNotFound(logger *utils.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Error.Println("Request URL not found: ", r.URL.Path)
-		api.SendError(w, http.StatusNotFound, errors.New("vfadsfdsafads"))
+		api.SendError(w, http.StatusNotFound, errors.New("path not handled"))
 	}
 }

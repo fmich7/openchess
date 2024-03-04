@@ -26,6 +26,7 @@ type Storage interface {
 	CreateChessGame(*ChessGame) error
 	GetChessGames() ([]*ChessGame, error)
 	GetChessGameByID(int) (*ChessGame, error)
+	UpdateChessGame(*types.ChessGame) error
 }
 
 type PostgressStore struct {
@@ -34,7 +35,8 @@ type PostgressStore struct {
 
 func NewPostgressStore(config *config.Env) (*PostgressStore, error) {
 	connStr := fmt.Sprintf(
-		"user=%s dbname=%s password=%s sslmode=%s",
+		"host=%s user=%s dbname=%s password=%s sslmode=%s",
+		config.GetEnv("POSTGRES_HOST"),
 		config.GetEnv("POSTGRES_USER"),
 		config.GetEnv("POSTGRES_DBNAME"),
 		config.GetEnv("POSTGRES_PASSWORD"),

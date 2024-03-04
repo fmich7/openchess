@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Chess, Square } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
@@ -5,6 +6,7 @@ import { FaChessPawn } from "react-icons/fa";
 import GameController from "../components/game/GameController";
 import LastMoves from "../components/game/LastMoves";
 import Timer from "../components/game/Timer";
+import { config } from "../config";
 
 interface Move {
   from: string;
@@ -38,6 +40,11 @@ const Game = () => {
     // init
     if (isMounted.current === false) {
       isMounted.current = true;
+
+      (async () => {
+        const response = await axios.get(`${config.apiURL}/game`);
+        console.log(response.data);
+      })();
 
       // ai start game
       if (gc.isPlayerOneWhite === false && whiteToMove.current) makeAiMove();
@@ -111,7 +118,7 @@ const Game = () => {
   };
 
   // TIMERS
-  const intervalRef = useRef<number>();
+  const intervalRef = useRef<NodeJS.Timeout>();
   const updateTimers = () => {
     clearInterval(intervalRef.current);
 

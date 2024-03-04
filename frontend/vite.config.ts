@@ -1,16 +1,22 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
 // https://vitejs.dev/config/
 // jsxRuntime: "classic",
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    watch: {
-      usePolling: true,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
+
+  const PORT = parseInt(`${env.VITE_PORT ?? "5173"}`);
+
+  return {
+    plugins: [react()],
+    server: {
+      port: PORT,
+      watch: {
+        usePolling: true,
+      },
+      host: true,
+      strictPort: true,
     },
-    host: true, // needed for the Docker Container port mapping to work
-    strictPort: true,
-    port: 5173, // you can replace this port with any port
-  },
+  };
 });

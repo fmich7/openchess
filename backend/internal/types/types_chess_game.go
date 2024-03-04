@@ -17,9 +17,11 @@ type CreateGameRequest struct {
 	GameType      string `json:"gameType"`
 }
 
+type Status string
+
 const (
-	Started string = "Game started"
-	Ended   string = "Game ended"
+	Started Status = "Game started"
+	Ended   Status = "Game ended"
 )
 
 type ChessGame struct {
@@ -47,7 +49,7 @@ func NewChessGame(req CreateGameRequest) *ChessGame {
 		WhitePlayerID:  req.WhitePlayerID,
 		BlackPlayerID:  req.BlackPlayerID,
 		WhiteToMove:    true,
-		GameFEN:        "",
+		GameFEN:        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 		GameType:       req.GameType,
 		GameStatus:     string(Started),
 		GameEnded:      false,

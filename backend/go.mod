@@ -1,6 +1,6 @@
 module github.com/rekjef/openchess
 
-go 1.21.6
+go 1.21
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -14,6 +14,7 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/notnil/chess v1.9.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/cors v1.10.1 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/crypto v0.19.0 // indirect

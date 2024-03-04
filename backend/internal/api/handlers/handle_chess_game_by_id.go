@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/api"
@@ -18,6 +17,13 @@ func getGameByID(id int, w http.ResponseWriter, r *http.Request, store database.
 }
 
 func updateGameByID(id int, w http.ResponseWriter, r *http.Request, store database.Storage) error {
+	game, err := store.GetChessGameByID(id)
+	if err != nil {
+		return err
+	}
+	game.GameFEN = "UPDATED"
+	game.GameStatus = "UPDATED?"
+	store.UpdateChessGame(game)
 
 	return utils.Encode(w, http.StatusOK, "game has been updated")
 }
@@ -38,7 +44,7 @@ func HandleChessGame(store database.Storage) http.HandlerFunc {
 			err := updateGameByID(id, w, r, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		default:
-			api.SendError(w, http.StatusMethodNotAllowed, errors.New("method not allowed "+r.Method))
+			api.MethodNotAllowed(w, r)
 		}
 	}
 }

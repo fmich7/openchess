@@ -1,3 +1,3 @@
 # openchess\_\_
 
-![preview](./frontend/public/preview.png)
+react/go chess app

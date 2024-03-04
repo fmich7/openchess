@@ -1,6 +1,26 @@
 version: "2"
 
 services:
+  db:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/api
+    depends_on:
+      - db
+
   ui:
     build: ./frontend
     volumes:
@@ -10,3 +30,6 @@ services:
       - WATCHPACK_POLLING=true
     ports:
       - "5173:5173"
+
+volumes:
+  postgres-db:
