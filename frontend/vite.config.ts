@@ -12,6 +12,15 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: PORT,
+      proxy: {
+        "/api": {
+          target: "http://api:3000",
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+          rewrite: (path) => path.replace(/^\/api/, ""),
+        },
+      },
       watch: {
         usePolling: true,
       },

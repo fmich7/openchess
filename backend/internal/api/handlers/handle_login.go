@@ -19,7 +19,7 @@ func loginUser(w http.ResponseWriter, r *http.Request, store database.Storage) e
 
 	acc, err := store.GetAccountByNickname(loginReq.Nickname)
 	if err != nil {
-		return err
+		return api.SendError(w, http.StatusUnauthorized, errors.New("not authenticated"))
 	}
 
 	if !acc.ComparePasswords(loginReq.Password) {

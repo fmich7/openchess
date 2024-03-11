@@ -128,9 +128,9 @@ func (s *PostgressStore) CreateChessGame(chessGame *ChessGame) error {
 	values (
 		$1, $2, $3, $4, $5, $6, $7, $8, 
 		$9, $10, $11, $12, $13, $14, $15
-	)`
+	) RETURNING id`
 
-	_, err := s.db.Query(
+	row, err := s.db.Query(
 		query,
 		chessGame.HostID,
 		chessGame.WhitePlayerID,
@@ -148,7 +148,14 @@ func (s *PostgressStore) CreateChessGame(chessGame *ChessGame) error {
 		chessGame.MoveHistory,
 		chessGame.CreatedAt,
 	)
+
 	if err != nil {
+		return err
+	}
+
+	for row.Next() {
+		err = row.Scan(&chessGame.ID)
+
 		return err
 	}
 

@@ -3,6 +3,7 @@ import { Chess, Square } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { FaChessPawn } from "react-icons/fa";
+import { useParams } from "react-router-dom";
 import GameController from "../components/game/GameController";
 import LastMoves from "../components/game/LastMoves";
 import Timer from "../components/game/Timer";
@@ -15,6 +16,7 @@ interface Move {
 }
 
 const Game = () => {
+  const { gameID } = useParams();
   // game variables
   const isMounted = useRef(false);
   const game = useRef(new Chess());
@@ -37,23 +39,28 @@ const Game = () => {
   const boardOrientation = gc.isPlayerOneWhite ? "white" : "black";
 
   useEffect(() => {
-    // init
     if (isMounted.current === false) {
       isMounted.current = true;
+      // Fetch game state from server
+      axios
+        .get(`${config.apiURL}/game/${gameID}`)
+        .then((response) => {
+          console.log(response.data);
 
-      (async () => {
-        const response = await axios.get(`${config.apiURL}/game`);
-        console.log(response.data);
-      })();
+          // ai start game
+          if (gc.isPlayerOneWhite === false && whiteToMove.current) {
+            makeAiMove();
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
 
-      // ai start game
-      if (gc.isPlayerOneWhite === false && whiteToMove.current) makeAiMove();
+      // Cleanup
+      return () => {
+        clearInterval(intervalRef.current);
+      };
     }
-
-    // Cleanup
-    return () => {
-      clearInterval(intervalRef.current);
-    };
   }, []);
 
   useEffect(() => {

@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/rs/cors"
-
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/rekjef/openchess/internal/config"
 	"github.com/rekjef/openchess/internal/database"
@@ -38,13 +37,18 @@ func run(context context.Context, env string) error {
 	}
 
 	// server stuff
-	mux := mux.NewRouter()
-	routes.AddRoutes(mux, logger, store)
+	router := mux.NewRouter()
+	routes.AddRoutes(router, logger, store)
+
+	handler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "PUT", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+	)(router)
 
 	port := config.GetEnv("PORT")
 	logger.Info.Printf("Server is running on port: %s\n", port)
 
-	handler := cors.Default().Handler(mux)
 	if err = http.ListenAndServe(":"+port, handler); err != nil {
 		return err
 	}

@@ -20,19 +20,16 @@ const Home = () => {
             name="Random moves"
             description="You should not have any troubble beating it!"
             image={EasyBotLogo}
-            redirect="game"
           />
           <BotCard
             name="Easy bot"
             description="Duel a bot that is a little challenging."
             image={MediumBotLogo}
-            redirect="game"
           />
           <BotCard
             name="Stockfish"
             description="Well, I guess you won't win against that."
             image={HardBotLogo}
-            redirect="game"
           />
         </div>
       </div>

@@ -4,8 +4,19 @@ import (
 	"math/rand"
 	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
+
+type AuthClaims struct {
+	ID       int    `json:"id"`
+	Nickname string `json:"nickname"`
+	jwt.RegisteredClaims
+}
+
+type UserAuthInfo struct {
+	ID int `json:"id"`
+}
 
 type Account struct {
 	ID                int       `json:"id"`

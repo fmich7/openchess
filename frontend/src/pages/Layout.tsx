@@ -10,7 +10,7 @@ const Layout = () => {
 
       {/* main */}
       <div className="bg-background md:ml-[-25px] w-full overflow-y-scroll md:rounded-l-3xl shadow-xl">
-        <div className="flex flex-col gap-6 p-8">
+        <div className="flex flex-col h-screen gap-6 p-8">
           <Header />
 
           <Outlet />
