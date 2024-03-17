@@ -63,6 +63,17 @@ func NewChessGame(req CreateGameRequest) *ChessGame {
 	}
 }
 
+type LiveGame struct {
+	Engine  *chess.Game
+	Details ChessGame
+}
+
+type GameUpdateOptions struct {
+	Move      string `json:"move"`
+	Resign    bool   `json:"resign"`
+	OfferDraw bool   `json:"draw"`
+}
+
 func (c *ChessGame) createEngineFromFEN(fenStr string) (*chess.Game, error) {
 	fen, err := chess.FEN(fenStr)
 	if err != nil {

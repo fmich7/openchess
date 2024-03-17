@@ -9,7 +9,6 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/rekjef/openchess/internal/api"
-	"github.com/rekjef/openchess/internal/database"
 	"github.com/rekjef/openchess/internal/types"
 	"github.com/rekjef/openchess/pkg/utils"
 )
@@ -28,7 +27,7 @@ func CreateJWT(account *types.Account) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-func WithJWTAuth(h http.HandlerFunc, s database.Storage) http.HandlerFunc {
+func WithJWTAuth(h http.HandlerFunc, s types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("calling JWT auth middleware")
 		tokenString := r.Header.Get("x-jwt-token")

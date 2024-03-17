@@ -36,9 +36,12 @@ func run(context context.Context, env string) error {
 		return err
 	}
 
+	// setup live game db
+	liveGameStore := database.NewRAMStore()
+
 	// server stuff
 	router := mux.NewRouter()
-	routes.AddRoutes(router, logger, store)
+	routes.AddRoutes(router, logger, store, liveGameStore)
 
 	handler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),

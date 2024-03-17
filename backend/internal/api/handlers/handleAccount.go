@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/api"
-	"github.com/rekjef/openchess/internal/database"
 	"github.com/rekjef/openchess/internal/types"
 	"github.com/rekjef/openchess/pkg/utils"
 )
 
-func getAccounts(w http.ResponseWriter, store database.Storage) error {
+// Get all accounts data
+func getAccounts(w http.ResponseWriter, store types.Storage) error {
 	accounts, err := store.GetAccounts()
 	if err != nil {
 		return err
@@ -18,7 +18,8 @@ func getAccounts(w http.ResponseWriter, store database.Storage) error {
 	return utils.Encode(w, http.StatusOK, accounts)
 }
 
-func createAccount(w http.ResponseWriter, r *http.Request, store database.Storage) error {
+// Create account
+func createAccount(w http.ResponseWriter, r *http.Request, store types.Storage) error {
 	accountRequest := new(types.CreateAccountRequest)
 	if err := utils.Decode[types.CreateAccountRequest](r, accountRequest); err != nil {
 		return err
@@ -45,7 +46,8 @@ func createAccount(w http.ResponseWriter, r *http.Request, store database.Storag
 	return utils.Encode(w, http.StatusOK, account)
 }
 
-func HandleAccount(logger *utils.Logger, store database.Storage) http.HandlerFunc {
+// HANDLE: /account
+func HandleAccount(logger *utils.Logger, store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":

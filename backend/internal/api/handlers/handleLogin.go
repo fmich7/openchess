@@ -6,12 +6,12 @@ import (
 
 	"github.com/rekjef/openchess/internal/api"
 	"github.com/rekjef/openchess/internal/api/auth"
-	"github.com/rekjef/openchess/internal/database"
 	"github.com/rekjef/openchess/internal/types"
 	"github.com/rekjef/openchess/pkg/utils"
 )
 
-func loginUser(w http.ResponseWriter, r *http.Request, store database.Storage) error {
+// Login user, check credentials, return TOKEN, ID
+func loginUser(w http.ResponseWriter, r *http.Request, store types.Storage) error {
 	loginReq := new(types.LoginRequest)
 	if err := utils.Decode[types.LoginRequest](r, loginReq); err != nil {
 		return err
@@ -39,7 +39,8 @@ func loginUser(w http.ResponseWriter, r *http.Request, store database.Storage) e
 	return utils.Encode(w, http.StatusOK, resp)
 }
 
-func HandleLogin(store database.Storage) http.HandlerFunc {
+// HANDLE: /login
+func HandleLogin(store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":

@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/api"
-	"github.com/rekjef/openchess/internal/database"
+	"github.com/rekjef/openchess/internal/types"
 	"github.com/rekjef/openchess/pkg/utils"
 )
 
-func handleDeleteAccountByID(w http.ResponseWriter, r *http.Request, store database.Storage) error {
+// Delete account by ID
+func deleteAccountByID(w http.ResponseWriter, r *http.Request, store types.Storage) error {
 	id, err := api.GetID(r)
 	if err != nil {
 		return err
@@ -21,7 +22,8 @@ func handleDeleteAccountByID(w http.ResponseWriter, r *http.Request, store datab
 	return utils.Encode(w, http.StatusOK, map[string]int{"deleted": id})
 }
 
-func handleGetAccountByID(w http.ResponseWriter, r *http.Request, store database.Storage) error {
+// Get account by ID
+func getAccountByID(w http.ResponseWriter, r *http.Request, store types.Storage) error {
 	id, err := api.GetID(r)
 	if err != nil {
 		return err
@@ -34,14 +36,15 @@ func handleGetAccountByID(w http.ResponseWriter, r *http.Request, store database
 	return utils.Encode(w, http.StatusOK, account)
 }
 
-func HandleAccountByID(logger *utils.Logger, store database.Storage) http.HandlerFunc {
+// HANDLE: /account/{id}
+func HandleAccountByID(logger *utils.Logger, store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			err := handleGetAccountByID(w, r, store)
+			err := getAccountByID(w, r, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		case "DELETE":
-			err := handleDeleteAccountByID(w, r, store)
+			err := deleteAccountByID(w, r, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		default:
 			api.MethodNotAllowed(w, r)

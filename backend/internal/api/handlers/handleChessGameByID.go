@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/api"
-	"github.com/rekjef/openchess/internal/database"
+	"github.com/rekjef/openchess/internal/types"
 	"github.com/rekjef/openchess/pkg/utils"
 )
 
-func getGameByID(id int, w http.ResponseWriter, r *http.Request, store database.Storage) error {
+// Get game data from FINISHED GAMES STORAGE
+func getGameByID(id int, w http.ResponseWriter, store types.Storage) error {
 	game, err := store.GetChessGameByID(id)
 	if err != nil {
 		return err
@@ -16,7 +17,8 @@ func getGameByID(id int, w http.ResponseWriter, r *http.Request, store database.
 	return utils.Encode(w, http.StatusOK, game)
 }
 
-func updateGameByID(id int, w http.ResponseWriter, r *http.Request, store database.Storage) error {
+// Update game in FINISHED GAMES STORAGE
+func updateGameByID(id int, w http.ResponseWriter, store types.Storage) error {
 	game, err := store.GetChessGameByID(id)
 	if err != nil {
 		return err
@@ -28,7 +30,8 @@ func updateGameByID(id int, w http.ResponseWriter, r *http.Request, store databa
 	return utils.Encode(w, http.StatusOK, "game has been updated")
 }
 
-func HandleChessGame(store database.Storage) http.HandlerFunc {
+// HANDLE: /game/{id}
+func HandleChessGame(store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := api.GetID(r)
 		if err != nil {
@@ -38,10 +41,10 @@ func HandleChessGame(store database.Storage) http.HandlerFunc {
 
 		switch r.Method {
 		case "GET":
-			err := getGameByID(id, w, r, store)
+			err := getGameByID(id, w, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		case "PATCH":
-			err := updateGameByID(id, w, r, store)
+			err := updateGameByID(id, w, store)
 			api.SendError(w, http.StatusBadRequest, err)
 		default:
 			api.MethodNotAllowed(w, r)

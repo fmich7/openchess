@@ -13,22 +13,6 @@ import (
 type Account = types.Account
 type ChessGame = types.ChessGame
 
-type Storage interface {
-	// Account
-	CreateAccount(*Account) error
-	DeleteAccount(int) error
-	UpdateAccount(*Account) error
-	GetAccounts() ([]*Account, error)
-	GetAccountByID(int) (*Account, error)
-	GetAccountByNickname(string) (*Account, error)
-
-	// ChessGame
-	CreateChessGame(*ChessGame) error
-	GetChessGames() ([]*ChessGame, error)
-	GetChessGameByID(int) (*ChessGame, error)
-	UpdateChessGame(*types.ChessGame) error
-}
-
 type PostgressStore struct {
 	db *sql.DB
 }
