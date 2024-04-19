@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/rekjef/openchess/internal/api"
+	"github.com/rekjef/openchess/internal/account"
 	"github.com/rekjef/openchess/internal/types"
-	"github.com/rekjef/openchess/pkg/utils"
+	"github.com/rekjef/openchess/internal/utils"
 )
 
 // Get all accounts data
@@ -27,10 +27,10 @@ func createAccount(w http.ResponseWriter, r *http.Request, store types.Storage) 
 	defer r.Body.Close()
 
 	if len(accountRequest.Password) < 3 {
-		return utils.Encode(w, http.StatusBadRequest, api.ApiError{Error: "invalid password"})
+		return utils.Encode(w, http.StatusBadRequest, utils.ApiError{Error: "invalid password"})
 	}
 
-	account, err := types.NewAccount(
+	acc, err := account.NewAccount(
 		accountRequest.FirstName,
 		accountRequest.LastName,
 		accountRequest.Nickname, accountRequest.Password)
@@ -39,25 +39,27 @@ func createAccount(w http.ResponseWriter, r *http.Request, store types.Storage) 
 		return err
 	}
 
-	if err := store.CreateAccount(account); err != nil {
+	id, err := store.CreateAccount(*acc)
+	if err != nil {
 		return err
 	}
+	acc.ID = id
 
-	return utils.Encode(w, http.StatusOK, account)
+	return utils.Encode(w, http.StatusOK, acc)
 }
 
 // HANDLE: /account
-func HandleAccount(logger *utils.Logger, store types.Storage) http.HandlerFunc {
+func HandleAccount(store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			err := getAccounts(w, store)
-			api.SendError(w, http.StatusBadRequest, err)
+			utils.SendError(w, http.StatusBadRequest, err)
 		case "POST":
 			err := createAccount(w, r, store)
-			api.SendError(w, http.StatusBadRequest, err)
+			utils.SendError(w, http.StatusBadRequest, err)
 		default:
-			api.MethodNotAllowed(w, r)
+			utils.MethodNotAllowed(w, r)
 		}
 
 	}

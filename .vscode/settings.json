@@ -1,0 +1,9 @@
+{
+  "grammarly.selectors": [
+    {
+      "language": "go",
+      "scheme": "file",
+      "pattern": "backend/internal/routes.go"
+    }
+  ]
+}

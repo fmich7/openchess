@@ -1,6 +1,5 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { config } from "../../config";
 
 interface BotCardProps {
   name: string;
@@ -12,19 +11,19 @@ const BotCard = (props: BotCardProps) => {
   const navigate = useNavigate();
   const hostGame = async () => {
     try {
-      const response = await axios.post(`${config.apiURL}/game`, {
+      const response = await axios.post(`/api/game`, {
         hostID: 1,
         whitePlayerID: 1,
         blackPlayerID: 2,
         isRanked: true,
-        time: 600,
+        time: 60000,
         timeAdded: 10,
         gameType: "ranked",
       });
 
       const gameID = response.data["id"];
       if (gameID) {
-        navigate(`/game/${gameID}`);
+        navigate(`/live/${gameID}`);
       } else {
         console.error("Response does not contain game id");
       }

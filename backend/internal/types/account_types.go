@@ -1,7 +1,6 @@
 package types
 
 import (
-	"math/rand"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -47,20 +46,4 @@ type CreateAccountRequest struct {
 
 func (a *Account) ComparePasswords(pw string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(a.EncryptedPassword), []byte(pw)) == nil
-}
-
-func NewAccount(firstName, lastName, nickname, password string) (*Account, error) {
-	encyptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Account{
-		FirstName:         firstName,
-		LastName:          lastName,
-		Nickname:          nickname,
-		EncryptedPassword: string(encyptedPassword),
-		Elo:               rand.Intn(2500),
-		CreatedAt:         time.Now().UTC(),
-	}, nil
 }

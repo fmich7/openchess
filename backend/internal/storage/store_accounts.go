@@ -1,13 +1,29 @@
-package database
+package storage
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+)
 
-func (s *PostgressStore) CreateAccount(acc *Account) error {
+func scanIntoAccount(rows *sql.Rows) (*Account, error) {
+	account := new(Account)
+	err := rows.Scan(
+		&account.ID,
+		&account.FirstName,
+		&account.LastName,
+		&account.Nickname,
+		&account.EncryptedPassword,
+		&account.Elo,
+		&account.CreatedAt)
+	return account, err
+}
+
+func (s *PostgressStore) CreateAccount(acc Account) (int, error) {
 	query := `insert into account
 	(first_name, last_name, nickname, encrypted_password, elo, created_at) 
-	values ($1, $2, $3, $4, $5, $6)`
+	values ($1, $2, $3, $4, $5, $6) RETURNING id`
 
-	_, err := s.db.Query(
+	row, err := s.db.Query(
 		query,
 		acc.FirstName,
 		acc.LastName,
@@ -16,10 +32,16 @@ func (s *PostgressStore) CreateAccount(acc *Account) error {
 		acc.Elo, acc.CreatedAt)
 
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	return err
+	for row.Next() {
+		err = row.Scan(&acc.ID)
+
+		return -1, err
+	}
+
+	return acc.ID, err
 }
 
 func (s *PostgressStore) UpdateAccount(*Account) error {

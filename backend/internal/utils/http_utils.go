@@ -1,4 +1,4 @@
-package api
+package utils
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/rekjef/openchess/pkg/utils"
 )
 
 type ApiError struct {
@@ -16,7 +15,7 @@ type ApiError struct {
 
 func SendError(w http.ResponseWriter, status int, err error) error {
 	if err != nil {
-		return utils.Encode(w, status, ApiError{Error: err.Error()})
+		return Encode(w, status, ApiError{Error: err.Error()})
 	}
 	return nil
 }
@@ -36,7 +35,12 @@ func MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
 }
 
 func PermissionDenied(w http.ResponseWriter) {
-	utils.Encode(w, http.StatusForbidden, ApiError{Error: "permission denied"})
+	Encode(w, http.StatusForbidden, ApiError{Error: "permission denied"})
+}
+
+// requested game is not active
+func NoActiveGameError(id int) error {
+	return fmt.Errorf("there is no active game with give ID %d", id)
 }
 
 func GetID(r *http.Request) (int, error) {

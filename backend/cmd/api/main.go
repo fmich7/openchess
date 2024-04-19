@@ -3,45 +3,46 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/rekjef/openchess/internal"
 	"github.com/rekjef/openchess/internal/config"
-	"github.com/rekjef/openchess/internal/database"
-	"github.com/rekjef/openchess/internal/routes"
-	"github.com/rekjef/openchess/pkg/utils"
+	"github.com/rekjef/openchess/internal/live_storage"
+	"github.com/rekjef/openchess/internal/storage"
+	"github.com/rekjef/openchess/internal/types"
 )
 
-func run(context context.Context, env string) error {
+func run(context context.Context) error {
 	defer context.Done()
-	// logger
-	logger := utils.NewLogger("console")
-
-	// load env
-	config := config.NewEnv(logger)
-	if err := config.LoadENV("dev"); err != nil {
-		return err
-	}
-
-	// setup db
-	store, err := database.NewPostgressStore(config)
+	config, err := config.LoadConfig(config.DEV)
 	if err != nil {
 		return err
 	}
 
-	// init if empty db
+	// setup db
+	credentials, err := storage.GetPostgressCredentials()
+	if err != nil {
+		return err
+	}
+	store, err := storage.NewPostgressStore(credentials)
+	if err != nil {
+		return err
+	}
+
 	if err := store.Init(); err != nil {
 		return err
 	}
 
-	// setup live game db
-	liveGameStore := database.NewRAMStore()
+	liveStore := live_storage.NewRAMStore()
 
-	// server stuff
+	server := types.NewServer(config, store, liveStore)
+
 	router := mux.NewRouter()
-	routes.AddRoutes(router, logger, store, liveGameStore)
+	internal.AddRoutes(router, server)
 
 	handler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
@@ -49,18 +50,16 @@ func run(context context.Context, env string) error {
 		handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
 	)(router)
 
-	port := config.GetEnv("PORT")
-	logger.Info.Printf("Server is running on port: %s\n", port)
-
-	if err = http.ListenAndServe(":"+port, handler); err != nil {
+	if err = http.ListenAndServe(":"+config.Port, handler); err != nil {
 		return err
 	}
+	log.Printf("Server is running on port: %s\n", config.Port)
 
 	return nil
 }
 
 func main() {
-	if err := run(context.Background(), "dev"); err != nil {
+	if err := run(context.Background()); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}

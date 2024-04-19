@@ -3,14 +3,13 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/rekjef/openchess/internal/api"
 	"github.com/rekjef/openchess/internal/types"
-	"github.com/rekjef/openchess/pkg/utils"
+	"github.com/rekjef/openchess/internal/utils"
 )
 
 // Delete account by ID
 func deleteAccountByID(w http.ResponseWriter, r *http.Request, store types.Storage) error {
-	id, err := api.GetID(r)
+	id, err := utils.GetID(r)
 	if err != nil {
 		return err
 	}
@@ -24,7 +23,7 @@ func deleteAccountByID(w http.ResponseWriter, r *http.Request, store types.Stora
 
 // Get account by ID
 func getAccountByID(w http.ResponseWriter, r *http.Request, store types.Storage) error {
-	id, err := api.GetID(r)
+	id, err := utils.GetID(r)
 	if err != nil {
 		return err
 	}
@@ -37,17 +36,17 @@ func getAccountByID(w http.ResponseWriter, r *http.Request, store types.Storage)
 }
 
 // HANDLE: /account/{id}
-func HandleAccountByID(logger *utils.Logger, store types.Storage) http.HandlerFunc {
+func HandleAccountByID(store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			err := getAccountByID(w, r, store)
-			api.SendError(w, http.StatusBadRequest, err)
+			utils.SendError(w, http.StatusBadRequest, err)
 		case "DELETE":
 			err := deleteAccountByID(w, r, store)
-			api.SendError(w, http.StatusBadRequest, err)
+			utils.SendError(w, http.StatusBadRequest, err)
 		default:
-			api.MethodNotAllowed(w, r)
+			utils.MethodNotAllowed(w, r)
 		}
 	}
 }

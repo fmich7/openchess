@@ -8,12 +8,12 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	"github.com/rekjef/openchess/internal/api"
+	"github.com/rekjef/openchess/internal/account"
 	"github.com/rekjef/openchess/internal/types"
-	"github.com/rekjef/openchess/pkg/utils"
+	"github.com/rekjef/openchess/internal/utils"
 )
 
-func CreateJWT(account *types.Account) (string, error) {
+func CreateJWT(account *account.Account) (string, error) {
 	claims := types.AuthClaims{
 		ID:       account.ID,
 		Nickname: account.Nickname,
@@ -34,27 +34,27 @@ func WithJWTAuth(h http.HandlerFunc, s types.Storage) http.HandlerFunc {
 
 		token, err := validateJWT(tokenString)
 		if err != nil || !token.Valid {
-			api.PermissionDenied(w)
+			utils.PermissionDenied(w)
 			return
 		}
 
-		userID, err := api.GetID(r)
+		userID, err := utils.GetID(r)
 		if err != nil {
-			api.PermissionDenied(w)
+			utils.PermissionDenied(w)
 		}
 		account, err := s.GetAccountByID(userID)
 		if err != nil {
-			api.PermissionDenied(w)
+			utils.PermissionDenied(w)
 		}
 
 		claims, ok := token.Claims.(*types.AuthClaims)
 		if !ok {
-			api.SendError(w, http.StatusBadRequest, errors.New("something is wrong with your auth"))
+			utils.SendError(w, http.StatusBadRequest, errors.New("something is wrong with your auth"))
 		}
 
 		// panic(reflect.TypeOf(claims["ID"]))
 		if account.Nickname != claims.Nickname {
-			api.PermissionDenied(w)
+			utils.PermissionDenied(w)
 			return
 		}
 
@@ -102,20 +102,22 @@ func getUserAuthInfo(tokenString string) (types.UserAuthInfo, error) {
 	return types.UserAuthInfo{ID: claims.ID}, nil
 }
 
-func WhoAmI(logger *utils.Logger) http.HandlerFunc {
+func WhoAmI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
-			api.MethodNotAllowed(w, r)
+			utils.MethodNotAllowed(w, r)
 			return
 		}
+
 		tokenString, err := r.Cookie("x-jwt-token")
 		if err != nil {
-			api.SendError(w, http.StatusBadRequest, err)
+			utils.SendError(w, http.StatusBadRequest, err)
+			return
 		}
 
 		userInfo, err := getUserAuthInfo(tokenString.Value)
 		if err != nil {
-			api.SendError(w, http.StatusBadRequest, err)
+			utils.SendError(w, http.StatusBadRequest, err)
 			return
 		}
 

@@ -3,9 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/rekjef/openchess/internal/api"
 	"github.com/rekjef/openchess/internal/types"
-	"github.com/rekjef/openchess/pkg/utils"
+	"github.com/rekjef/openchess/internal/utils"
 )
 
 // Get all finished chess games
@@ -27,11 +26,14 @@ func createNewGame(store types.Storage, liveGameStore types.LiveGameStorage, w h
 
 	// store game in db
 	game := types.NewChessGame(gameReq)
-	if err := store.CreateChessGame(game); err != nil {
+	id, err := store.CreateChessGame(*game)
+	if err != nil {
 		return err
 	}
+
+	game.ID = id
 	// store as live game
-	if err := liveGameStore.AddGame(*game); err != nil {
+	if err := liveGameStore.AddGame(*game, store); err != nil {
 		return err
 	}
 
@@ -44,14 +46,14 @@ func HandleManagingChessGame(store types.Storage, liveGameStore types.LiveGameSt
 		switch r.Method {
 		case "GET":
 			if err := getGamesData(w, r, store); err != nil {
-				api.SendError(w, http.StatusBadRequest, err)
+				utils.SendError(w, http.StatusBadRequest, err)
 			}
 		case "POST":
 			if err := createNewGame(store, liveGameStore, w, r); err != nil {
-				api.SendError(w, http.StatusBadRequest, err)
+				utils.SendError(w, http.StatusBadRequest, err)
 			}
 		default:
-			api.MethodNotAllowed(w, r)
+			utils.MethodNotAllowed(w, r)
 		}
 	}
 }

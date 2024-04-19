@@ -7,7 +7,6 @@ import { useParams } from "react-router-dom";
 import GameController from "../components/game/GameController";
 import LastMoves from "../components/game/LastMoves";
 import Timer from "../components/game/Timer";
-import { config } from "../config";
 
 interface Move {
   from: string;
@@ -16,96 +15,54 @@ interface Move {
 }
 
 const Game = () => {
+  // LOCAL GAME MOVE VALIDATION
+  const game = useRef(new Chess());
+
   const { gameID } = useParams();
   // game variables
   const isMounted = useRef(false);
-  const game = useRef(new Chess());
   const whiteToMove = useRef(true);
-  const [isGameOver, setIsGameOver] = useState(false);
-
+  const [gameFEN, setGameFEN] = useState(
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+  );
   const playerOneId = "Player";
   const playerTwoId = "Opponent";
   const gc: GameController = useMemo(() => {
     return new GameController(true, 10, 0, playerOneId, playerTwoId, "Bullet");
   }, []);
 
-  const [movesList, setMovesList] = useState<string[]>([]);
-  const [whiteTurn, setWhiteTurn] = useState(whiteToMove.current);
-
-  // players
-  const [whiteTime, setWhiteTime] = useState(gc.time * 1000);
-  const [blackTime, setBlackTime] = useState(gc.time * 1000);
-
-  const boardOrientation = gc.isPlayerOneWhite ? "white" : "black";
-
   useEffect(() => {
     if (isMounted.current === false) {
       isMounted.current = true;
       // Fetch game state from server
       axios
-        .get(`${config.apiURL}/game/${gameID}`)
+        .get(`/api/live/${gameID}`)
         .then((response) => {
-          console.log(response.data);
-
-          // ai start game
-          if (gc.isPlayerOneWhite === false && whiteToMove.current) {
-            makeAiMove();
+          const data = response.data;
+          // FEN
+          if (data["details"]["game_fen"]) {
+            setGameFEN(data["details"]["game_fen"]);
+          } else {
+            throw new Error("Something is wrong with server...");
           }
         })
         .catch((error) => {
-          console.error("Error fetching data:", error);
+          throw new Error("Error fetching data:" + error);
         });
-
-      // Cleanup
-      return () => {
-        clearInterval(intervalRef.current);
-      };
     }
   }, []);
 
-  useEffect(() => {
-    if (blackTime === 0 || whiteTime == 0) {
-      console.log("Ran out of time!");
-      gameOver();
-    }
-  }, [whiteTime, blackTime]);
-
-  // make a ai move
-  const makeAiMove = () => {
-    setTimeout(() => {
-      const possibleMoves = game.current.moves();
-      const randomIndex = Math.floor(Math.random() * possibleMoves.length);
-
-      makeMove(possibleMoves[randomIndex]);
-    }, 400);
-  };
-
-  // make move
   const makeMove = (move: Move | string) => {
     const currMove = game.current.move(move);
     if (currMove === null) {
       return null;
     }
-
-    if (game.current.isGameOver()) gameOver();
-    else updateTimers();
-    setMovesList((moves) => [
-      ...moves,
-      game.current.history()[game.current.history().length - 1],
-    ]);
-    whiteToMove.current = !whiteToMove.current;
-    setWhiteTurn(whiteToMove.current);
-
     return currMove;
   };
 
   // handle dropping piece on board
   const onDrop = (sourceSquare: Square, targetSquare: Square) => {
-    if (
-      (gc.isPlayerOneWhite && !whiteTurn) ||
-      (!gc.isPlayerOneWhite && whiteTurn)
-    )
-      return false;
+    const fen_before_move = game.current.fen();
 
     const move = makeMove({
       from: sourceSquare,
@@ -113,32 +70,36 @@ const Game = () => {
       promotion: "q", // always promote to a queen for example simplicity
     });
     if (move === null) return false;
+    setGameFEN(game.current.fen());
 
-    makeAiMove();
+    axios
+      .put(`/api/live/${gameID}`, {
+        move: move?.lan,
+      })
+      .catch((error) => {
+        game.current = new Chess(fen_before_move);
+        setGameFEN(game.current.fen());
+        throw new Error(error);
+      });
+
     return true;
   };
 
-  const gameOver = () => {
-    clearInterval(intervalRef.current);
-    setIsGameOver(true);
-    game.current.isGameOver = () => true;
-  };
-
   // TIMERS
-  const intervalRef = useRef<NodeJS.Timeout>();
-  const updateTimers = () => {
-    clearInterval(intervalRef.current);
+  // const intervalRef = useRef<NodeJS.Timeout>();
+  // const updateTimers = () => {
+  //   clearInterval(intervalRef.current);
 
-    if (isGameOver) return;
+  //   if (isGameOver) return;
 
-    intervalRef.current = setInterval(() => {
-      if (whiteToMove.current) {
-        setWhiteTime((t) => Math.max(0, t - 100));
-      } else {
-        setBlackTime((t) => Math.max(0, t - 100));
-      }
-    }, 100);
-  };
+  //   intervalRef.current = setInterval(() => {
+  //     if (whiteToMove.current) {
+  //       setWhiteTime((t) => Math.max(0, t - 100));
+  //     } else {
+  //       setBlackTime((t) => Math.max(0, t - 100));
+  //     }
+  //   }, 100);
+  // };
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 md:items-start md:flex-row">
@@ -173,13 +134,13 @@ const Game = () => {
       <div className="grid justify-center">
         <div className="w-96 text-fuchsia-50">
           <Chessboard
-            boardOrientation={boardOrientation}
-            position={game.current.fen()}
+            boardOrientation={"white"}
+            position={gameFEN}
             onPieceDrop={onDrop}
-            arePiecesDraggable={!isGameOver}
+            arePiecesDraggable={true}
             autoPromoteToQueen={true}
           />
-          {game.current.fen()}
+          {gameFEN}
         </div>
       </div>
       {/* TIMERS SECTION */}
@@ -188,7 +149,7 @@ const Game = () => {
           {/* opponents timer */}
           <Timer
             nickname={playerTwoId}
-            time={!gc.isPlayerOneWhite ? whiteTime : blackTime}
+            time={1000}
             isActive={
               gc.isPlayerOneWhite ? !whiteToMove.current : whiteToMove.current
             }
@@ -196,7 +157,7 @@ const Game = () => {
           />
           <hr className="border-t border-copy-lighter"></hr>
           {/* last moves */}
-          <LastMoves moves={movesList} />
+          <LastMoves moves={["1", "a", "3"]} />
           {/* offer and resign buttons */}
           <div className="grid gap-2">
             <button className="h-12 rounded-lg bg-border hover:bg-background">
@@ -210,7 +171,7 @@ const Game = () => {
           <hr className="border-t border-copy-lighter"></hr>
           <Timer
             nickname={playerOneId}
-            time={gc.isPlayerOneWhite ? whiteTime : blackTime}
+            time={1000}
             isWhite={gc.isPlayerOneWhite}
             isActive={
               gc.isPlayerOneWhite ? whiteToMove.current : !whiteToMove.current
