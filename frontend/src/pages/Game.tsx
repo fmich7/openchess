@@ -50,7 +50,7 @@ const Game = () => {
           throw new Error("Error fetching data:" + error);
         });
     }
-  }, []);
+  }, [gameID]);
 
   const makeMove = (move: Move | string) => {
     const currMove = game.current.move(move);

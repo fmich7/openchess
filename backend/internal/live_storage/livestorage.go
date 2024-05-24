@@ -27,7 +27,7 @@ func (r RAMStore) AddGame(details types.ChessGame, store types.Storage) error {
 
 	go func() {
 		r[id].StartGame()
-		defer r.EndGame(id, chess.BlackWon, store)
+		r.EndGame(id, chess.BlackWon, store)
 	}()
 
 	return nil

@@ -5,7 +5,6 @@ import (
 
 	"github.com/rekjef/openchess/internal/types"
 )
-
 type Account = types.Account
 type ChessGame = types.ChessGame
 
