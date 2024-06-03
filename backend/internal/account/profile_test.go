@@ -18,7 +18,6 @@ func TestGetProfile(t *testing.T) {
 	})
 
 	storage.CreateAccount(types.Account{ID: 0})
-
 	t.Run("acc exists", func(t *testing.T) {
 		profile, err := GetProfile(0, storage)
 		if err != nil {

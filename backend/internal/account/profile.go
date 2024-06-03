@@ -5,8 +5,8 @@ import (
 )
 
 type Profile struct {
-	Acc   Account
-	Games []types.ChessGame
+	Acc   Account           `json:"account"`
+	Games []types.ChessGame `json:"games"`
 }
 
 func GetProfile(id int, storage types.Storage) (Profile, error) {
