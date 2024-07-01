@@ -12,10 +12,25 @@ const Home = () => {
       <hr className="border-t border-gray-600"></hr>
       {/* bots section */}
       <div className="flex flex-col items-center h-[430px]">
-        <span className="mb-6 text-2xl font-bold text-copy">
-          Challenge our bots
-        </span>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 ">
+        <span className="mb-6 text-2xl font-bold text-copy">Leaderboard</span>
+        <div className="flex flex-col gap-6">
+          <div className="p-5 rounded w-96 bg-foreground text-copy-light">
+            <p className="float-left">1. nickname</p>
+            <p className="float-right">1237 elo</p>
+          </div>
+          <div className="p-5 rounded w-96 bg-foreground text-copy-light">
+            <p className="float-left">2. nickname</p>
+            <p className="float-right">1237 elo</p>
+          </div>
+          <div className="p-5 rounded w-96 bg-foreground text-copy-light">
+            <p className="float-left">3. nickname</p>
+            <p className="float-right">1237 elo</p>
+          </div>
+          <div className="p-5 rounded w-96 bg-foreground text-copy-light">
+            <p className="float-left">4. nickname</p>
+            <p className="float-right">1237 elo</p>
+          </div>
+
           <BotCard
             name="Random moves"
             description="You should not have any troubble beating it!"

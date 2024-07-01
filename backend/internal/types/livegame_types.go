@@ -28,6 +28,10 @@ type GameUpdateOptions struct {
 	OfferDraw bool   `json:"draw"`
 }
 
+type UpdatedState struct {
+	FEN string `json:"fen"`
+}
+
 func (g *LiveGame) StartGame() {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	// start decrementing white time

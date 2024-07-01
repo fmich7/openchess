@@ -15,16 +15,9 @@ interface Move {
 }
 
 const Game = () => {
-  // LOCAL GAME MOVE VALIDATION
-  const game = useRef(new Chess());
-
   const { gameID } = useParams();
-  // game variables
-  const isMounted = useRef(false);
   const whiteToMove = useRef(true);
-  const [gameFEN, setGameFEN] = useState(
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-  );
+  const [game, setGame] = useState(new Chess());
   const playerOneId = "Player";
   const playerTwoId = "Opponent";
   const gc: GameController = useMemo(() => {
@@ -32,37 +25,40 @@ const Game = () => {
   }, []);
 
   useEffect(() => {
-    if (isMounted.current === false) {
-      isMounted.current = true;
-      // Fetch game state from server
-      axios
-        .get(`/api/live/${gameID}`)
-        .then((response) => {
-          const data = response.data;
-          // FEN
-          if (data["details"]["game_fen"]) {
-            setGameFEN(data["details"]["game_fen"]);
-          } else {
-            throw new Error("Something is wrong with server...");
-          }
-        })
-        .catch((error) => {
-          throw new Error("Error fetching data:" + error);
-        });
-    }
+    // if (isMounted.current === false) {
+    // isMounted.current = true;
+    // Fetch game state from server
+    axios
+      .get(`/api/live/${gameID}`)
+      .then((response) => {
+        const data = response.data;
+        // FEN
+        if (data["details"]["game_fen"]) {
+          setGame(new Chess(data["details"]["game_fen"]));
+        } else {
+          throw new Error("Something is wrong with server...");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error fetching data:" + error);
+      });
+    // }
   }, [gameID]);
 
   const makeMove = (move: Move | string) => {
-    const currMove = game.current.move(move);
-    if (currMove === null) {
+    const gameCopy = new Chess(game.fen());
+    const result = gameCopy.move(move);
+    if (result === null) {
       return null;
     }
-    return currMove;
+
+    setGame(gameCopy);
+    return result;
   };
 
   // handle dropping piece on board
   const onDrop = (sourceSquare: Square, targetSquare: Square) => {
-    const fen_before_move = game.current.fen();
+    const fen_before = game.fen();
 
     const move = makeMove({
       from: sourceSquare,
@@ -70,15 +66,19 @@ const Game = () => {
       promotion: "q", // always promote to a queen for example simplicity
     });
     if (move === null) return false;
-    setGameFEN(game.current.fen());
 
     axios
       .put(`/api/live/${gameID}`, {
         move: move?.lan,
       })
+      .then((resp) => {
+        const data = resp.data;
+        if (data["fen"]) {
+          setGame(new Chess(data["fen"]));
+        }
+      })
       .catch((error) => {
-        game.current = new Chess(fen_before_move);
-        setGameFEN(game.current.fen());
+        setGame(new Chess(fen_before));
         throw new Error(error);
       });
 
@@ -135,12 +135,12 @@ const Game = () => {
         <div className="w-96 text-fuchsia-50">
           <Chessboard
             boardOrientation={"white"}
-            position={gameFEN}
+            position={game.fen()}
             onPieceDrop={onDrop}
             arePiecesDraggable={true}
             autoPromoteToQueen={true}
           />
-          {gameFEN}
+          {game.fen()}
         </div>
       </div>
       {/* TIMERS SECTION */}

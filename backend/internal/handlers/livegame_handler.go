@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"math/rand"
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/types"
@@ -36,11 +37,11 @@ func updateLiveGameState(
 		return err
 	}
 
-	type UpdateState struct {
-		FEN string `json:"fen"`
-	}
+	// handle computer move
+	moves := game.Engine.ValidMoves()
+	game.Engine.Move(moves[rand.Int()%len(moves)])
 
-	return utils.Encode[UpdateState](w, http.StatusOK, UpdateState{FEN: game.Engine.FEN()})
+	return utils.Encode[types.UpdatedState](w, http.StatusOK, types.UpdatedState{FEN: game.Engine.FEN()})
 }
 
 // HANDLE: /live/{id}

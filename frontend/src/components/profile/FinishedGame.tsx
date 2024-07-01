@@ -14,10 +14,10 @@ export type FGameProps = {
   time_added: number;
 };
 const FinishedGame: React.FC<{ games: FGameProps[] }> = ({ games }) => {
-  const gamesJSX: JSX.Element[] = [];
+  const gameList: JSX.Element[] = [];
 
   for (let i = 0; i < games.length; i++) {
-    gamesJSX.push(
+    gameList.push(
       <div key={i} className="p-2 border-2 rounded bg-background border-border">
         <div className="flex flex-row justify-between">
           <div>
@@ -35,9 +35,10 @@ const FinishedGame: React.FC<{ games: FGameProps[] }> = ({ games }) => {
       </div>
     );
   }
-  if (gamesJSX.length === 0)
-    return <div className="text-center">No games found</div>;
-  else return gamesJSX;
+  if (gameList.length === 0)
+    gameList.push(<div className="text-center">No games found</div>);
+
+  return gameList;
 };
 
 export default FinishedGame;
