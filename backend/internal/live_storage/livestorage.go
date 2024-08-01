@@ -1,7 +1,9 @@
 package live_storage
 
 import (
+	"errors"
 	"fmt"
+	"log"
 
 	"github.com/notnil/chess"
 	"github.com/rekjef/openchess/internal/types"
@@ -24,10 +26,21 @@ func (r RAMStore) AddGame(details types.ChessGame, store types.Storage) error {
 	}
 
 	r[id] = types.NewLiveGame(details)
+	if r[id] == nil {
+		return fmt.Errorf("failed to create new LiveGame")
+	}
 
 	go func() {
-		r[id].StartGame()
-		r.EndGame(id, chess.BlackWon, store)
+		// make first move if computer is white
+		if details.HostID != details.UserIDToMove() {
+			r.MakeMove(id, r[id].ComputeAIMove())
+		}
+		if r[id] != nil {
+			r[id].StartGame()
+			defer r.EndGame(id, chess.BlackWon, store)
+		} else {
+			log.Println("LiveGame is nil, cannot start game")
+		}
 	}()
 
 	return nil
@@ -39,6 +52,21 @@ func (r RAMStore) GetGame(id int) (*types.LiveGame, error) {
 		return liveGame, nil
 	}
 	return nil, utils.NoActiveGameError(id)
+}
+
+func (r RAMStore) MakeMove(id int, move *chess.Move) error {
+	liveGame, ok := r[id]
+	if !ok {
+		return utils.NoActiveGameError(id)
+	}
+	details := &liveGame.Details
+
+	if err := liveGame.CommitMove(move); err != nil {
+		return err
+	}
+	r[id].ColorChannel <- details.ColorToMove
+
+	return nil
 }
 
 // Update live state
@@ -64,21 +92,20 @@ func (r RAMStore) UpdateGame(id int, options types.GameUpdateOptions, store type
 		engine.Draw(chess.DrawOffer)
 	} else if options.Move != "" {
 		// check if move is invalid
+		if options.UserID != details.UserIDToMove() {
+			return errors.New("your id doesn't match with allowed one to move")
+		}
+
 		var move *chess.Move
 		for _, elem := range engine.ValidMoves() {
 			if options.Move == elem.String() {
 				move = elem
 			}
 		}
-		err := engine.Move(move)
-		if err != nil {
+
+		if err := r.MakeMove(id, move); err != nil {
 			return err
 		}
-		details.SwitchColors()
-		r[id].ColorChannel <- details.ColorToMove
-
-		details.MoveHistory += fmt.Sprintf("%s\n", options.Move)
-		details.MovesCount++
 	}
 
 	r[id] = liveGame
@@ -118,5 +145,12 @@ func (r RAMStore) EndGame(id int, outcome chess.Outcome, store types.Storage) er
 	if err := r.DeleteGame(id); err != nil {
 		return err
 	}
+
+	// check whenever add new game to db or to update if exists
+	if _, err := store.GetChessGameByID(details.ID); err != nil {
+		_, err := store.CreateChessGame(details)
+		return err
+	}
+
 	return store.UpdateChessGame(details)
 }
