@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/notnil/chess"
@@ -13,6 +15,19 @@ type LiveGame struct {
 	Details        ChessGame        `json:"details"`
 }
 
+type GameUpdateOptions struct {
+	Move      string `json:"move"`
+	Resign    bool   `json:"resign"`
+	UserID    int    `json:"user_id"`
+	OfferDraw bool   `json:"draw"`
+}
+
+type UpdatedState struct {
+	FEN         string `json:"fen"`
+	MoveHistory string `json:"move_history"`
+	WhiteToMove bool   `json:"white_to_move"`
+}
+
 func NewLiveGame(details ChessGame) *LiveGame {
 	return &LiveGame{
 		Engine:         chess.NewGame(),
@@ -22,20 +37,11 @@ func NewLiveGame(details ChessGame) *LiveGame {
 	}
 }
 
-type GameUpdateOptions struct {
-	Move      string `json:"move"`
-	Resign    bool   `json:"resign"`
-	OfferDraw bool   `json:"draw"`
-}
-
-type UpdatedState struct {
-	FEN string `json:"fen"`
-}
-
 func (g *LiveGame) StartGame() {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	// start decrementing white time
 	targetTime := &g.Details.WhiteTime
+	fmt.Println(*targetTime)
 
 	for {
 		select {
@@ -59,4 +65,24 @@ func (g *LiveGame) StartGame() {
 			}
 		}
 	}
+}
+
+func (g *LiveGame) CommitMove(move *chess.Move) error {
+	err := g.Engine.Move(move)
+	if err != nil {
+		return err
+	}
+	g.Details.SwitchColors()
+
+	g.Details.AddToHistory(move.String())
+	g.Details.MovesCount++
+	g.Details.GameFEN = g.Engine.FEN()
+
+	return nil
+}
+
+func (g *LiveGame) ComputeAIMove() *chess.Move {
+	moves := g.Engine.ValidMoves()
+	move := moves[rand.Int()%len(moves)]
+	return move
 }

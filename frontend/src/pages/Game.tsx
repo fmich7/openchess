@@ -1,10 +1,9 @@
 import axios from "axios";
 import { Chess, Square } from "chess.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { FaChessPawn } from "react-icons/fa";
 import { useParams } from "react-router-dom";
-import GameController from "../components/game/GameController";
 import LastMoves from "../components/game/LastMoves";
 import Timer from "../components/game/Timer";
 
@@ -14,52 +13,82 @@ interface Move {
   promotion: string;
 }
 
+type GameDetails = {
+  time: number;
+  timeAdded: number;
+  whitePlayerID: number;
+  blackPlayerID: number;
+  isRanked: boolean;
+  gameType: string;
+  moveHistory: string;
+  gameFen: string;
+};
+
+const defaultGameDetails: GameDetails = {
+  time: 0,
+  timeAdded: 0,
+  whitePlayerID: 0,
+  blackPlayerID: 0,
+  isRanked: true,
+  gameType: "",
+  moveHistory: "",
+  gameFen: "",
+};
+
 const Game = () => {
   const { gameID } = useParams();
-  const whiteToMove = useRef(true);
   const [game, setGame] = useState(new Chess());
-  const playerOneId = "Player";
-  const playerTwoId = "Opponent";
-  const gc: GameController = useMemo(() => {
-    return new GameController(true, 10, 0, playerOneId, playerTwoId, "Bullet");
-  }, []);
+  const [fen, setFen] = useState(game.fen());
+  const [gameDetails, setGameDetails] =
+    useState<GameDetails>(defaultGameDetails);
+  const myID = 1;
 
   useEffect(() => {
-    // if (isMounted.current === false) {
-    // isMounted.current = true;
     // Fetch game state from server
     axios
       .get(`/api/live/${gameID}`)
       .then((response) => {
         const data = response.data;
-        // FEN
-        if (data["details"]["game_fen"]) {
-          setGame(new Chess(data["details"]["game_fen"]));
-        } else {
-          throw new Error("Something is wrong with server...");
-        }
+        console.log(data);
+        // SET INITIAL INFORMATION
+        setGameDetails({
+          time: data["details"]["time"] / 1000,
+          timeAdded: data["details"]["time_added"] / 1000,
+          whitePlayerID: data["details"]["white_player_id"],
+          blackPlayerID: data["details"]["black_player_id"],
+          isRanked: data["details"]["is_ranked"],
+          gameType: data["details"]["game_type"],
+          moveHistory: data["details"]["move_history"],
+          gameFen: data["details"]["game_fen"],
+        });
+        setGame(() => new Chess(data["details"]["game_fen"]));
+        setFen(data["details"]["game_fen"]);
       })
       .catch((error) => {
         throw new Error("Error fetching data:" + error);
       });
-    // }
-  }, [gameID]);
+  }, []);
 
-  const makeMove = (move: Move | string) => {
-    const gameCopy = new Chess(game.fen());
-    const result = gameCopy.move(move);
-    if (result === null) {
-      return null;
-    }
+  const makeMove = useCallback(
+    (move: Move | string) => {
+      try {
+        const result = game.move(move);
+        if (result === null) {
+          return null;
+        }
 
-    setGame(gameCopy);
-    return result;
-  };
+        setGameDetails({ ...gameDetails });
+        setFen(game.fen());
+        return result;
+      } catch (e) {
+        return null;
+      }
+    },
+    [game]
+  );
 
   // handle dropping piece on board
   const onDrop = (sourceSquare: Square, targetSquare: Square) => {
-    const fen_before = game.fen();
-
     const move = makeMove({
       from: sourceSquare,
       to: targetSquare,
@@ -70,16 +99,21 @@ const Game = () => {
     axios
       .put(`/api/live/${gameID}`, {
         move: move?.lan,
+        user_id: myID,
       })
       .then((resp) => {
         const data = resp.data;
-        if (data["fen"]) {
-          setGame(new Chess(data["fen"]));
-        }
+        console.log(data);
+        setGame(new Chess(data["fen"]));
+        setFen(data["fen"]);
+        setGameDetails({
+          ...gameDetails,
+          moveHistory: data["move_history"],
+          gameFen: data["fen"],
+        });
       })
-      .catch((error) => {
-        setGame(new Chess(fen_before));
-        throw new Error(error);
+      .catch((e) => {
+        throw new Error(e);
       });
 
     return true;
@@ -113,51 +147,49 @@ const Game = () => {
             </div>
             <div>
               <p>
-                {(gc.time / 60).toString() + "+" + gc.timeAdded.toString()} •{" "}
-                {gc.isRanked ? "Ranked" : "Casual"} • {gc.gameType}
+                {(gameDetails.time / 60).toString() +
+                  "+" +
+                  gameDetails.timeAdded.toString()}{" "}
+                • {gameDetails.isRanked ? "Ranked" : "Casual"} •{" "}
+                {gameDetails.gameType}
               </p>
               <span className=" text-copy-lighter">Just started now</span>
             </div>
           </div>
           {/* match players */}
           <div>
-            {(!gc.isPlayerOneWhite ? "⚪" : "⚫") + " " + playerTwoId}
+            {/* {(!gc.isPlayerOneWhite ? "⚪" : "⚫") + " " + playerTwoId}
             <br />
-            {(gc.isPlayerOneWhite ? "⚪" : "⚫") + " " + playerOneId}
+            {(gc.isPlayerOneWhite ? "⚪" : "⚫") + " " + playerOneId} */}
           </div>
           <hr className="border-t border-copy-lighter"></hr>
           {/* game status */}
-          <div className="grid justify-center">{gc.gameStatus}</div>
+          {/* <div className="grid justify-center">{gc.gameStatus}</div> */}
         </div>
       </div>
       {/* BOARD SECTION */}
       <div className="grid justify-center">
         <div className="w-96 text-fuchsia-50">
           <Chessboard
-            boardOrientation={"white"}
-            position={game.fen()}
+            boardOrientation={
+              myID == gameDetails.whitePlayerID ? "white" : "black"
+            }
+            position={fen}
             onPieceDrop={onDrop}
             arePiecesDraggable={true}
             autoPromoteToQueen={true}
           />
-          {game.fen()}
+          {fen}
         </div>
       </div>
       {/* TIMERS SECTION */}
       <div className="flex-1 w-full md:max-w-96 text-copy-light">
         <div className="flex flex-col gap-4 p-4 border rounded shadow-2xl bg-foreground border-border">
           {/* opponents timer */}
-          <Timer
-            nickname={playerTwoId}
-            time={1000}
-            isActive={
-              gc.isPlayerOneWhite ? !whiteToMove.current : whiteToMove.current
-            }
-            isWhite={!gc.isPlayerOneWhite}
-          />
+          <Timer nickname={"sad"} time={1000} isActive={true} isWhite={true} />
           <hr className="border-t border-copy-lighter"></hr>
           {/* last moves */}
-          <LastMoves moves={["1", "a", "3"]} />
+          <LastMoves moves={gameDetails.moveHistory} />
           {/* offer and resign buttons */}
           <div className="grid gap-2">
             <button className="h-12 rounded-lg bg-border hover:bg-background">
@@ -169,14 +201,7 @@ const Game = () => {
           </div>
           {/* players timer */}
           <hr className="border-t border-copy-lighter"></hr>
-          <Timer
-            nickname={playerOneId}
-            time={1000}
-            isWhite={gc.isPlayerOneWhite}
-            isActive={
-              gc.isPlayerOneWhite ? whiteToMove.current : !whiteToMove.current
-            }
-          />
+          <Timer nickname={"sad"} time={1000} isActive={true} isWhite={true} />
         </div>
       </div>
     </div>

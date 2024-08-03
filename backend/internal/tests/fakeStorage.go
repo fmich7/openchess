@@ -5,6 +5,7 @@ import (
 
 	"github.com/rekjef/openchess/internal/types"
 )
+
 type Account = types.Account
 type ChessGame = types.ChessGame
 
@@ -19,6 +20,8 @@ func NewFakeDB() *FakeDB {
 	return &FakeDB{
 		Accounts: make(map[int]Account),
 		Games:    make(map[int]ChessGame),
+		AccID:    0,
+		GameID:   0,
 	}
 }
 
@@ -60,10 +63,10 @@ func (f *FakeDB) GetAccountByNickname(nickname string) (*Account, error) {
 	return nil, fmt.Errorf("user with nickname=%s does not exist", nickname)
 }
 
-func (f *FakeDB) GetAccounts() ([]*Account, error) {
-	accounts := []*Account{}
+func (f *FakeDB) GetAccounts() ([]Account, error) {
+	accounts := []Account{}
 	for _, acc := range f.Accounts {
-		accounts = append(accounts, &acc)
+		accounts = append(accounts, acc)
 	}
 	return accounts, nil
 }

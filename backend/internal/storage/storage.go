@@ -88,6 +88,9 @@ func (s *PostgressStore) createAccountTable() error {
 		nickname varchar(50),
 		encrypted_password varchar(100),
 		elo serial,
+		games_won serial,
+		games_lost serial,
+		games_played serial,
 		created_at timestamp
 	)`
 

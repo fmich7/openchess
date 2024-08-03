@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"math/rand"
 	"net/http"
 
 	"github.com/rekjef/openchess/internal/types"
@@ -38,10 +37,14 @@ func updateLiveGameState(
 	}
 
 	// handle computer move
-	moves := game.Engine.ValidMoves()
-	game.Engine.Move(moves[rand.Int()%len(moves)])
+	liveGameStore.MakeMove(id, game.ComputeAIMove())
 
-	return utils.Encode[types.UpdatedState](w, http.StatusOK, types.UpdatedState{FEN: game.Engine.FEN()})
+	updatedState := types.UpdatedState{
+		FEN:         game.Engine.FEN(),
+		WhiteToMove: game.Details.WhiteToMove,
+		MoveHistory: game.Details.MoveHistory,
+	}
+	return utils.Encode[types.UpdatedState](w, http.StatusOK, updatedState)
 }
 
 // HANDLE: /live/{id}

@@ -6,7 +6,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 
-function App() {
+const App = () => {
   return (
     <BrowserRouter>
       <Routes>
@@ -20,6 +20,6 @@ function App() {
       </Routes>
     </BrowserRouter>
   );
-}
+};
 
 export default App;

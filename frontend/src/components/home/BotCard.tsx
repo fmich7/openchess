@@ -13,12 +13,10 @@ const BotCard = (props: BotCardProps) => {
     try {
       const response = await axios.post(`/api/game`, {
         hostID: 1,
-        whitePlayerID: 1,
-        blackPlayerID: 2,
+        opponentID: 0,
         isRanked: true,
-        time: 60000,
+        time: 60,
         timeAdded: 10,
-        gameType: "ranked",
       });
 
       const gameID = response.data["id"];

@@ -19,12 +19,15 @@ type UserAuthInfo struct {
 
 type Account struct {
 	ID                int       `json:"id"`
-	FirstName         string    `json:"firstName"`
-	LastName          string    `json:"lastName"`
+	FirstName         string    `json:"firstname"`
+	LastName          string    `json:"lastname"`
 	Nickname          string    `json:"nickname"`
 	EncryptedPassword string    `json:"-"`
 	Elo               int       `json:"elo"`
-	CreatedAt         time.Time `json:"createdAt"`
+	GamesWon          int       `json:"games_won"`
+	GamesLost         int       `json:"games_lost"`
+	GamesPlayed       int       `json:"games_played"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
 type LoginResponse struct {

@@ -10,7 +10,7 @@ type Storage interface {
 	CreateAccount(Account) (int, error)
 	DeleteAccount(int) error
 	UpdateAccount(*Account) error
-	GetAccounts() ([]*Account, error)
+	GetAccounts() ([]Account, error)
 	GetAccountByID(int) (*Account, error)
 	GetAccountByNickname(string) (*Account, error)
 
@@ -23,6 +23,7 @@ type Storage interface {
 type LiveGameStorage interface {
 	AddGame(ChessGame, Storage) error
 	GetGame(int) (*LiveGame, error)
+	MakeMove(id int, move *chess.Move) error
 	UpdateGame(int, GameUpdateOptions, Storage) error
 	DeleteGame(int) error
 	EndGame(int, chess.Outcome, Storage) error

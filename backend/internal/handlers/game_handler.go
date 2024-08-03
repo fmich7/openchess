@@ -26,14 +26,14 @@ func createNewGame(store types.Storage, liveGameStore types.LiveGameStorage, w h
 
 	// store game in db
 	game := types.NewChessGame(gameReq)
-	id, err := store.CreateChessGame(*game)
+	id, err := store.CreateChessGame(game)
 	if err != nil {
 		return err
 	}
 
 	game.ID = id
 	// store as live game
-	if err := liveGameStore.AddGame(*game, store); err != nil {
+	if err := liveGameStore.AddGame(game, store); err != nil {
 		return err
 	}
 

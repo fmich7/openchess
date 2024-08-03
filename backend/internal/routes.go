@@ -22,5 +22,7 @@ func AddRoutes(
 
 	mux.HandleFunc("/live/{id}", handlers.HandleLiveChessGameByID(server.LiveStore, server.Store))
 
+	mux.HandleFunc("/leaderboard", handlers.HandleLeaderboard(server.Store))
+
 	mux.Handle("/", handlers.HandleNotFound())
 }

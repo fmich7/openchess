@@ -1,20 +1,19 @@
 package types
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/notnil/chess"
 )
 
 type CreateGameRequest struct {
-	ID            int    `json:"id"`
-	HostID        int    `json:"hostID"`
-	WhitePlayerID int    `json:"whitePlayerID"`
-	BlackPlayerID int    `json:"blackPlayerID"`
-	IsRanked      bool   `json:"isRanked"`
-	Time          int    `json:"time"`
-	TimeAdded     int    `json:"timeAdded"`
-	GameType      string `json:"gameType"`
+	ID         int  `json:"id"`
+	HostID     int  `json:"hostID"`
+	OpponentID int  `json:"opponentID"`
+	IsRanked   bool `json:"isRanked"`
+	Time       int  `json:"time"`
+	TimeAdded  int  `json:"timeAdded"`
 }
 
 type Status string
@@ -46,24 +45,34 @@ type ChessGame struct {
 	CreatedAt     time.Time     `json:"created_at"`
 }
 
-func NewChessGame(req CreateGameRequest) *ChessGame {
-	white := chess.White
-	return &ChessGame{
+func NewChessGame(req CreateGameRequest) ChessGame {
+	var gameType string
+	if req.IsRanked {
+		gameType = "Ranked"
+	} else {
+		gameType = "Unranked"
+	}
+	var WhitePlayerID, BlackPlayerID int = req.HostID, req.OpponentID
+	if rand.Intn(2) == 1 {
+		WhitePlayerID, BlackPlayerID = BlackPlayerID, WhitePlayerID
+	}
+
+	return ChessGame{
 		HostID:        req.HostID,
-		WhitePlayerID: req.WhitePlayerID,
-		BlackPlayerID: req.BlackPlayerID,
+		WhitePlayerID: WhitePlayerID,
+		BlackPlayerID: BlackPlayerID,
 		WhiteToMove:   true,
-		ColorToMove:   white,
+		ColorToMove:   chess.White,
 		GameFEN:       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-		GameType:      req.GameType,
+		GameType:      gameType,
 		GameStatus:    GameStarted,
 		GameEnded:     false,
 		GameOutcome:   chess.NoOutcome,
 		IsRanked:      req.IsRanked,
-		Time:          req.Time,
-		TimeAdded:     req.TimeAdded,
-		WhiteTime:     req.Time,
-		BlackTime:     req.Time,
+		Time:          req.Time * 1000, // req.Time is in seconds, we need miliseconds
+		TimeAdded:     req.TimeAdded * 1000,
+		WhiteTime:     req.Time * 1000,
+		BlackTime:     req.Time * 1000,
 		MovesCount:    0,
 		MoveHistory:   "",
 		CreatedAt:     time.Now().UTC(),
@@ -77,4 +86,19 @@ func (g *ChessGame) SwitchColors() {
 	} else {
 		g.ColorToMove = chess.Black
 	}
+}
+
+func (g *ChessGame) AddToHistory(move string) {
+	if g.MoveHistory == "" {
+		g.MoveHistory = move
+	} else {
+		g.MoveHistory += " " + move
+	}
+}
+
+func (g ChessGame) UserIDToMove() int {
+	if g.WhiteToMove {
+		return g.WhitePlayerID
+	}
+	return g.BlackPlayerID
 }

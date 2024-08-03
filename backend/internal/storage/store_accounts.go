@@ -14,14 +14,20 @@ func scanIntoAccount(rows *sql.Rows) (*Account, error) {
 		&account.Nickname,
 		&account.EncryptedPassword,
 		&account.Elo,
+		&account.GamesWon,
+		&account.GamesLost,
+		&account.GamesPlayed,
 		&account.CreatedAt)
 	return account, err
 }
 
 func (s *PostgressStore) CreateAccount(acc Account) (int, error) {
 	query := `insert into account
-	(first_name, last_name, nickname, encrypted_password, elo, created_at) 
-	values ($1, $2, $3, $4, $5, $6) RETURNING id`
+	(
+		first_name, last_name, nickname, encrypted_password, elo, 
+		games_won, games_lost, games_played, created_at
+	) 
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
 
 	row, err := s.db.Query(
 		query,
@@ -29,7 +35,10 @@ func (s *PostgressStore) CreateAccount(acc Account) (int, error) {
 		acc.LastName,
 		acc.Nickname,
 		acc.EncryptedPassword,
-		acc.Elo, acc.CreatedAt)
+		acc.Elo,
+		0, 0, 0,
+		acc.CreatedAt,
+	)
 
 	if err != nil {
 		return -1, err
@@ -77,19 +86,19 @@ func (s *PostgressStore) GetAccountByNickname(nickname string) (*Account, error)
 	return nil, fmt.Errorf("user with nickname=%s does not exist", nickname)
 }
 
-func (s *PostgressStore) GetAccounts() ([]*Account, error) {
+func (s *PostgressStore) GetAccounts() ([]Account, error) {
 	rows, err := s.db.Query("select * from account")
 	if err != nil {
 		return nil, err
 	}
 
-	accounts := []*Account{}
+	accounts := []Account{}
 	for rows.Next() {
 		account, err := scanIntoAccount(rows)
 		if err != nil {
 			return nil, err
 		}
-		accounts = append(accounts, account)
+		accounts = append(accounts, *account)
 	}
 
 	return accounts, nil
