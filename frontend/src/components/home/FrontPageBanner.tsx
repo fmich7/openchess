@@ -1,6 +1,56 @@
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Board from "../chessboard/Chessboard";
 
+type WebsiteStats = {
+  usersCount: number;
+  gamesCount: number;
+};
+
 const Banner = () => {
+  const [stats, setStats] = useState<WebsiteStats>({
+    usersCount: 0,
+    gamesCount: 0,
+  });
+
+  useEffect(() => {
+    axios
+      .get("/api/stats")
+      .then((response) => {
+        const data = response.data;
+        setStats({
+          usersCount: data["users_count"],
+          gamesCount: data["games_count"],
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, []);
+
+  const navigate = useNavigate();
+  const hostGame = async () => {
+    try {
+      const response = await axios.post(`/api/game`, {
+        hostID: 1,
+        opponentID: 0,
+        isRanked: true,
+        time: 60,
+        timeAdded: 10,
+      });
+
+      const gameID = response.data["id"];
+      if (gameID) {
+        navigate(`/live/${gameID}`);
+      } else {
+        console.error("Response does not contain game id");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="md:flex md:gap-6">
@@ -25,7 +75,7 @@ const Banner = () => {
             </p>
 
             <p className="text-lg text-copy-lighter">
-              10 users ● 132 games ● 0 trackers
+              {stats.usersCount} users ● {stats.gamesCount} games ● 0 trackers
             </p>
           </div>
 
@@ -33,7 +83,10 @@ const Banner = () => {
             <button className="flex-1 py-3 rounded bg-primary text-background md:py-4">
               Join now
             </button>
-            <button className="flex-1 py-3 mt-4 rounded bg-primary text-background md:py-4 md:mt-0">
+            <button
+              className="flex-1 py-3 mt-4 rounded bg-primary text-background md:py-4 md:mt-0"
+              onClick={hostGame}
+            >
               Quickplay
             </button>
           </div>
