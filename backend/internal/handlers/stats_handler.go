@@ -13,7 +13,7 @@ type LeaderboardRangeRequest struct {
 	End   int `json:"end"`
 }
 
-// HANDLE: /stats
+// HANDLE: /leaderboard
 func HandleLeaderboard(store types.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -42,6 +42,39 @@ func HandleLeaderboard(store types.Storage) http.HandlerFunc {
 			}
 
 			utils.Encode[[]types.Account](w, http.StatusOK, leaderboard)
+		default:
+			utils.MethodNotAllowed(w, r)
+		}
+
+	}
+}
+
+type StatsResponse struct {
+	UsersCount int `json:"users_count"`
+	GamesCount int `json:"games_count"`
+}
+
+// HANDLE: /stats
+func HandleStats(store types.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		// json: start: int, end: int (optional)
+		case "GET":
+			userCount, err := stats.CountUsers(store)
+			if err != nil {
+				utils.SendError(w, http.StatusInternalServerError, err)
+				return
+			}
+			gamesCount, err := stats.CountPlayedGames(store)
+			if err != nil {
+				utils.SendError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			utils.Encode[StatsResponse](w, http.StatusOK, StatsResponse{
+				UsersCount: userCount,
+				GamesCount: gamesCount,
+			})
 		default:
 			utils.MethodNotAllowed(w, r)
 		}

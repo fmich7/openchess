@@ -28,3 +28,19 @@ func GetRangedLeaderboard(start int, end int, store types.Storage) ([]types.Acco
 
 	return leaderboard[start:min(end, len(leaderboard))], nil
 }
+
+func CountUsers(store types.Storage) (int, error) {
+	accounts, err := store.GetAccounts()
+	if err != nil {
+		return -1, err
+	}
+	return len(accounts), nil
+}
+
+func CountPlayedGames(store types.Storage) (int, error) {
+	games, err := store.GetChessGames()
+	if err != nil {
+		return -1, err
+	}
+	return len(games), nil
+}

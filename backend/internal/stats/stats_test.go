@@ -55,3 +55,41 @@ func TestGetLeaderboard(t *testing.T) {
 		assert.Equal(t, leaderboard[1].Elo, 1201)
 	})
 }
+
+func TestCountUsers(t *testing.T) {
+	store := tests.NewFakeDB()
+	userCount, err := CountUsers(store)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, userCount, 0)
+	_, err = store.CreateAccount(types.Account{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	userCount, err = CountUsers(store)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, userCount, 1)
+}
+
+func TestCountPlayedGames(t *testing.T) {
+	store := tests.NewFakeDB()
+	gamesCount, err := CountPlayedGames(store)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, gamesCount, 0)
+	_, err = store.CreateChessGame(types.ChessGame{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	gamesCount, err = CountPlayedGames(store)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, gamesCount, 1)
+}
