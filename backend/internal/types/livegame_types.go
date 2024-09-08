@@ -74,6 +74,7 @@ func (g *LiveGame) CommitMove(move *chess.Move) error {
 	}
 	g.Details.SwitchColors()
 
+	g.Details.GameOutcome = g.Engine.Outcome()
 	g.Details.AddToHistory(move.String())
 	g.Details.MovesCount++
 	g.Details.GameFEN = g.Engine.FEN()

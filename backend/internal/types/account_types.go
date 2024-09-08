@@ -47,6 +47,11 @@ type CreateAccountRequest struct {
 	Password  string `json:"password"`
 }
 
+type UserStats struct {
+	GameWon  int
+	GameLost int
+}
+
 func (a *Account) ComparePasswords(pw string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(a.EncryptedPassword), []byte(pw)) == nil
 }

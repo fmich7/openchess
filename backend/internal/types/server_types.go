@@ -19,6 +19,7 @@ type Storage interface {
 	GetChessGames() ([]*ChessGame, error)
 	GetChessGameByID(int) (*ChessGame, error)
 	UpdateChessGame(ChessGame) error
+	UpdatePlayerStats(int, UserStats) error
 }
 type LiveGameStorage interface {
 	AddGame(ChessGame, Storage) error
@@ -26,7 +27,7 @@ type LiveGameStorage interface {
 	MakeMove(id int, move *chess.Move) error
 	UpdateGame(int, GameUpdateOptions, Storage) error
 	DeleteGame(int) error
-	EndGame(int, chess.Outcome, Storage) error
+	EndGame(int, Storage) error
 }
 type Server struct {
 	Config    config.Config

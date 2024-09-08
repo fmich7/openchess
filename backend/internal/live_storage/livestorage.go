@@ -37,7 +37,7 @@ func (r RAMStore) AddGame(details types.ChessGame, store types.Storage) error {
 		}
 		if r[id] != nil {
 			r[id].StartGame()
-			defer r.EndGame(id, chess.BlackWon, store)
+			defer r.EndGame(id, store)
 		} else {
 			log.Println("LiveGame is nil, cannot start game")
 		}
@@ -107,13 +107,11 @@ func (r RAMStore) UpdateGame(id int, options types.GameUpdateOptions, store type
 			return err
 		}
 	}
-
 	r[id] = liveGame
 	// check if game has ended
 	// *, 1-0, 0-1, 1/2-1/2
-	engineOutcome := engine.Outcome()
-	if engineOutcome != chess.NoOutcome {
-		return r.EndGame(id, engineOutcome, store)
+	if engine.Outcome() != chess.NoOutcome {
+		return r.EndGame(id, store)
 	}
 
 	return nil
@@ -128,8 +126,30 @@ func (r RAMStore) DeleteGame(id int) error {
 	return utils.NoActiveGameError(id)
 }
 
+func EndGameUpdateStats(store types.Storage, details types.ChessGame) error {
+	if details.GameOutcome == chess.Draw {
+		return nil
+	}
+
+	whiteStats := types.UserStats{GameWon: 1}
+	blackStats := types.UserStats{GameLost: 1}
+	if details.GameOutcome == chess.BlackWon {
+		whiteStats, blackStats = blackStats, whiteStats
+	}
+
+	if err := store.UpdatePlayerStats(details.WhitePlayerID, whiteStats); err != nil {
+		return err
+	}
+
+	if err := store.UpdatePlayerStats(details.BlackPlayerID, blackStats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Delete game from ram mem, add to db
-func (r RAMStore) EndGame(id int, outcome chess.Outcome, store types.Storage) error {
+func (r RAMStore) EndGame(id int, store types.Storage) error {
 	game, ok := r[id]
 	if !ok {
 		return utils.NoActiveGameError(id)
@@ -140,9 +160,18 @@ func (r RAMStore) EndGame(id int, outcome chess.Outcome, store types.Storage) er
 	details := game.Details
 	details.GameEnded = true
 	details.GameStatus = types.GameEnded
-	details.GameOutcome = outcome
+	if details.WhiteTime <= 0 {
+		details.GameOutcome = chess.BlackWon
+	} else if details.BlackTime <= 0 {
+		details.GameOutcome = chess.WhiteWon
+	}
 
 	if err := r.DeleteGame(id); err != nil {
+		return err
+	}
+
+	// update players stats
+	if err := EndGameUpdateStats(store, details); err != nil {
 		return err
 	}
 

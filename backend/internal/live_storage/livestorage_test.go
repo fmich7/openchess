@@ -165,7 +165,7 @@ func TestEndGame(t *testing.T) {
 	game := types.ChessGame{ID: 0, GameFEN: "asdfasf"}
 
 	t.Run("no game to end", func(t *testing.T) {
-		if err := liveStore.EndGame(0, chess.Draw, store); err == nil {
+		if err := liveStore.EndGame(0, store); err == nil {
 			t.Error("game not live")
 		}
 	})
@@ -180,7 +180,8 @@ func TestEndGame(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := liveStore.EndGame(game.ID, chess.Draw, store); err != nil {
+		// TODO: check for draw
+		if err := liveStore.EndGame(game.ID, store); err != nil {
 			t.Fatal(err)
 		}
 

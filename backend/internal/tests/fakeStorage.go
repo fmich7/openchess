@@ -104,3 +104,18 @@ func (f *FakeDB) UpdateChessGame(updatedGame ChessGame) error {
 	f.Games[updatedGame.ID] = updatedGame
 	return nil
 }
+
+func (f *FakeDB) UpdatePlayerStats(id int, stats types.UserStats) error {
+	acc, err := f.GetAccountByID(id)
+	if err != nil {
+		return err
+	}
+	acc.GamesPlayed++
+	if stats.GameLost == 1 {
+		acc.GamesLost++
+	} else {
+		acc.GamesWon++
+	}
+	f.Accounts[id] = *acc
+	return nil
+}

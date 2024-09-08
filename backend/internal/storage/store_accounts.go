@@ -3,6 +3,8 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/rekjef/openchess/internal/types"
 )
 
 func scanIntoAccount(rows *sql.Rows) (*Account, error) {
@@ -102,4 +104,29 @@ func (s *PostgressStore) GetAccounts() ([]Account, error) {
 	}
 
 	return accounts, nil
+}
+
+func (s *PostgressStore) UpdatePlayerStats(id int, stats types.UserStats) error {
+	var updateQuery string
+
+	if stats.GameLost == 1 {
+		updateQuery = `
+        UPDATE account 
+        SET
+            games_lost = games_lost + 1,
+            games_played = games_played + 1
+        WHERE
+            id = $1`
+	} else {
+		updateQuery = `
+        UPDATE account 
+        SET
+            games_won = games_won + 1,
+            games_played = games_played + 1
+        WHERE
+            id = $1`
+	}
+
+	_, updateErr := s.db.Exec(updateQuery, id)
+	return updateErr
 }

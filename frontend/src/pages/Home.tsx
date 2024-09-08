@@ -21,7 +21,7 @@ const fetchLeaderboard = () => {
           <span className="float-left">{index + 1}.</span>
           <span className="float-left ml-3">🇵🇱 {profile.nickname}</span>
           <p className="float-right">
-            {profile.elo} elo | {profile.games_won}/{profile.games_lost}
+            {profile.elo} elo | {profile.games_won}/{profile.games_played} WR
           </p>
         </div>
       ));
