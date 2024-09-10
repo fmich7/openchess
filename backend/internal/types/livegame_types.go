@@ -26,6 +26,8 @@ type UpdatedState struct {
 	FEN         string `json:"fen"`
 	MoveHistory string `json:"move_history"`
 	WhiteToMove bool   `json:"white_to_move"`
+	WhiteTime   int    `json:"white_time"`
+	BlackTime   int    `json:"black_time"`
 }
 
 func NewLiveGame(details ChessGame) *LiveGame {

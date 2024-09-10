@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/rekjef/openchess/internal/types"
 	"github.com/rekjef/openchess/internal/utils"
@@ -37,13 +38,16 @@ func updateLiveGameState(
 	}
 
 	// handle computer move
+	time.Sleep(time.Millisecond * 450)
 	liveGameStore.MakeMove(id, game.ComputeAIMove())
-
 	updatedState := types.UpdatedState{
 		FEN:         game.Engine.FEN(),
 		WhiteToMove: game.Details.WhiteToMove,
 		MoveHistory: game.Details.MoveHistory,
+		WhiteTime:   game.Details.WhiteTime,
+		BlackTime:   game.Details.BlackTime,
 	}
+
 	return utils.Encode[types.UpdatedState](w, http.StatusOK, updatedState)
 }
 

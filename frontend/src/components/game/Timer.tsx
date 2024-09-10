@@ -1,4 +1,4 @@
-// import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface TimerProps {
   nickname: string;
@@ -16,24 +16,43 @@ function formatTime(duration: number): string {
   const formattedMinutes = minutes.toString().padStart(2, "0");
   const formattedSeconds = seconds.toString().padStart(2, "0");
 
-  if (hours > 0) {
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  } else {
-    return `${formattedMinutes}:${formattedSeconds}`;
-  }
+  return hours > 0
+    ? `${formattedHours}:${formattedMinutes}:${formattedSeconds}`
+    : `${formattedMinutes}:${formattedSeconds}`;
 }
 
-const Timer = (props: TimerProps) => {
-  const colorEmoji = props.isWhite ? "⚪" : "⚫";
-  const formattedTime = formatTime(props.time);
-  // const [time, setTime] = useState(props.time);
+const Timer = ({ nickname, time, isWhite, isActive }: TimerProps) => {
+  const [currentTime, setCurrentTime] = useState(time);
+
+  useEffect(() => {
+    setCurrentTime(time);
+  }, [time]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
+    if (isActive && currentTime > 0) {
+      timer = setInterval(() => {
+        setCurrentTime((prevTime) => prevTime - 1000);
+      }, 1000);
+    }
+
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [isActive, currentTime]);
+
+  const colorEmoji = isWhite ? "⚪" : "⚫";
+  const formattedTime = formatTime(currentTime);
 
   return (
-    <div className="flex ">
-      <p className="flex-1 ">{colorEmoji + " " + props.nickname}</p>
+    <div className="flex">
+      <p className="flex-1">{colorEmoji + " " + nickname}</p>
       <div
         className={`px-3 py-1 text-2xl font-bold rounded ${
-          props.isActive ? "bg-secondary-dark" : "bg-border"
+          isActive ? "bg-secondary-dark" : "bg-border"
         }`}
       >
         {formattedTime}

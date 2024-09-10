@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Chess, Square } from "chess.js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { FaChessPawn } from "react-icons/fa";
 import { useParams } from "react-router-dom";
@@ -22,6 +22,13 @@ type GameDetails = {
   gameType: string;
   moveHistory: string;
   gameFen: string;
+  whiteTime: number;
+  blackTime: number;
+};
+
+type OpponentData = {
+  nickname: string;
+  whiteColor: boolean;
 };
 
 const defaultGameDetails: GameDetails = {
@@ -33,6 +40,13 @@ const defaultGameDetails: GameDetails = {
   gameType: "",
   moveHistory: "",
   gameFen: "",
+  blackTime: 0,
+  whiteTime: 0,
+};
+
+const defaultOpponentData: OpponentData = {
+  nickname: "Opponent",
+  whiteColor: false,
 };
 
 const Game = () => {
@@ -41,6 +55,9 @@ const Game = () => {
   const [fen, setFen] = useState(game.fen());
   const [gameDetails, setGameDetails] =
     useState<GameDetails>(defaultGameDetails);
+  const [opponentData, setOpponentData] =
+    useState<OpponentData>(defaultOpponentData);
+  const [myTurn, setMyTurn] = useState<boolean>(true);
   const myID = 1;
 
   useEffect(() => {
@@ -60,9 +77,16 @@ const Game = () => {
           gameType: data["details"]["game_type"],
           moveHistory: data["details"]["move_history"],
           gameFen: data["details"]["game_fen"],
+          whiteTime: data["details"]["time"],
+          blackTime: data["details"]["time"],
         });
         setGame(() => new Chess(data["details"]["game_fen"]));
         setFen(data["details"]["game_fen"]);
+        setMyTurn(myID == data["details"]["white_player_id"]);
+        setOpponentData({
+          whiteColor: myID != data["details"]["white_player_id"],
+          nickname: "opp",
+        });
       })
       .catch((error) => {
         throw new Error("Error fetching data:" + error);
@@ -95,7 +119,7 @@ const Game = () => {
       promotion: "q", // always promote to a queen for example simplicity
     });
     if (move === null) return false;
-
+    setMyTurn(!myTurn);
     axios
       .put(`/api/live/${gameID}`, {
         move: move?.lan,
@@ -106,10 +130,13 @@ const Game = () => {
         console.log(data);
         setGame(new Chess(data["fen"]));
         setFen(data["fen"]);
+        setMyTurn(true);
         setGameDetails({
           ...gameDetails,
           moveHistory: data["move_history"],
           gameFen: data["fen"],
+          whiteTime: data["white_time"],
+          blackTime: data["black_time"],
         });
       })
       .catch((e) => {
@@ -118,22 +145,6 @@ const Game = () => {
 
     return true;
   };
-
-  // TIMERS
-  // const intervalRef = useRef<NodeJS.Timeout>();
-  // const updateTimers = () => {
-  //   clearInterval(intervalRef.current);
-
-  //   if (isGameOver) return;
-
-  //   intervalRef.current = setInterval(() => {
-  //     if (whiteToMove.current) {
-  //       setWhiteTime((t) => Math.max(0, t - 100));
-  //     } else {
-  //       setBlackTime((t) => Math.max(0, t - 100));
-  //     }
-  //   }, 100);
-  // };
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 md:items-start md:flex-row">
@@ -179,14 +190,23 @@ const Game = () => {
             arePiecesDraggable={true}
             autoPromoteToQueen={true}
           />
-          {fen}
+          <p className="text-sm">FEN: {fen}</p>
         </div>
       </div>
       {/* TIMERS SECTION */}
       <div className="flex-1 w-full md:max-w-96 text-copy-light">
         <div className="flex flex-col gap-4 p-4 border rounded shadow-2xl bg-foreground border-border">
           {/* opponents timer */}
-          <Timer nickname={"sad"} time={1000} isActive={true} isWhite={true} />
+          <Timer
+            nickname={opponentData.nickname}
+            time={
+              opponentData.whiteColor
+                ? gameDetails.whiteTime
+                : gameDetails.blackTime
+            }
+            isActive={!myTurn}
+            isWhite={opponentData.whiteColor}
+          />
           <hr className="border-t border-copy-lighter"></hr>
           {/* last moves */}
           <LastMoves moves={gameDetails.moveHistory} />
@@ -201,7 +221,16 @@ const Game = () => {
           </div>
           {/* players timer */}
           <hr className="border-t border-copy-lighter"></hr>
-          <Timer nickname={"sad"} time={1000} isActive={true} isWhite={true} />
+          <Timer
+            nickname={"sad"}
+            time={
+              opponentData.whiteColor
+                ? gameDetails.blackTime
+                : gameDetails.whitePlayerID
+            }
+            isActive={myTurn}
+            isWhite={!opponentData.whiteColor}
+          />
         </div>
       </div>
     </div>
